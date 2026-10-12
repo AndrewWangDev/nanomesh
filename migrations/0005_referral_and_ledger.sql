@@ -2,11 +2,12 @@
 -- Adds referral code system and credit ledger for real billing data.
 
 -- 1. Add referral columns to users
-ALTER TABLE users ADD COLUMN referral_code TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN referral_code TEXT;
 ALTER TABLE users ADD COLUMN referred_by TEXT;
 
 -- 2. Backfill existing users with a referral code (NM- + 6 hex chars)
 UPDATE users SET referral_code = 'NM-' || upper(substr(hex(randomblob(3)), 1, 6)) WHERE referral_code IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
 
 -- 3. Create credit ledger table
 CREATE TABLE IF NOT EXISTS credit_ledger (

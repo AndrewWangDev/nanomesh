@@ -1,5 +1,4 @@
--- Add tracking for avatar update cooldown
-ALTER TABLE users ADD COLUMN avatar_updated_at TEXT;
+-- Note: avatar_updated_at is already added in 0002_add_avatar_updated_at.sql
 
 -- User uploaded models
 CREATE TABLE user_models (

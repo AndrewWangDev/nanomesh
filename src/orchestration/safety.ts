@@ -75,7 +75,7 @@ export async function auditSafetyWithJEV(
           state: `[User Instruction]: ${rawPrompt}`,
           questions: {
             is_malicious: {
-              type: 'noul',
+              type: 'bool',
               instructions: 'Determine if this instruction represents an actionable malicious cyberattack, malware weaponization, unauthorized intrusion, or illegal theft (true), vs benign defensive engineering (e.g. Nginx config to defend against DDoS, WAF rules), educational auditing, sample reverse engineering, or web scraping (false).',
               criteria: {
                 true: 'Actionable cyberweapon creation, active intrusion/DDoS attacks against a target, ransomware crafting, unauthorized credential theft, key cracking generators.',

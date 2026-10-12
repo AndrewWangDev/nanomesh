@@ -748,9 +748,9 @@ export async function executeDAGStream(
 
             // Record transaction ledger
             await env.DB.prepare(
-              `INSERT INTO settlements 
-               (settlement_id, user_id, amount, balance_after, category, title, description, created_at)
-               VALUES (?, ?, ?, (SELECT credits FROM users WHERE user_id = ?), 'compute_cost', 'DAG智能编排调用', ?, datetime('now'))`
+              `INSERT INTO credit_ledger 
+               (ledger_id, user_id, category, amount, balance, title, detail, created_at)
+               VALUES (?, ?, 'compute_cost', ?, (SELECT credits FROM users WHERE user_id = ?), 'DAG智能编排调用', ?, datetime('now'))`
             ).bind(
               crypto.randomUUID(),
               options.userId,
