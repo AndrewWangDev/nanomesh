@@ -91,7 +91,8 @@ export async function handleSaveHistory(request: Request, env: Env): Promise<Res
          cached = excluded.cached,
          pinned = excluded.pinned,
          rounds_json = excluded.rounds_json,
-         updated_at = datetime('now')`
+         updated_at = datetime('now')
+       WHERE user_chat_sessions.user_id = excluded.user_id`
     ).bind(
       sessionId,
       session.userId,

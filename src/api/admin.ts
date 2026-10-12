@@ -53,7 +53,12 @@ export async function handleAdminLogin(request: Request, env: Env): Promise<Resp
   }
 
   const body = await request.json().catch(() => ({})) as { password?: string };
-  if (!body.password || body.password !== adminPass) {
+  const enc = new TextEncoder();
+  const inputBuffer = enc.encode(body.password || "");
+  const passBuffer = enc.encode(adminPass);
+  const isMatch = inputBuffer.length === passBuffer.length && crypto.subtle.timingSafeEqual(inputBuffer, passBuffer);
+
+  if (!isMatch) {
     await env.DB.prepare("INSERT INTO admin_login_attempts (ip) VALUES (?)").bind(ip).run();
     return new Response(JSON.stringify({ error: "Invalid admin password" }), {
       status: 401,
@@ -87,18 +92,25 @@ export async function handleAdminListModels(request: Request, env: Env): Promise
   const url = new URL(request.url);
   const statusFilter = url.searchParams.get("status") || "all";
 
+  const allowedStatuses = ['pending', 'approved', 'published', 'rejected'];
   let whereClause = "WHERE uum.status != 'uploading'";
-  if (statusFilter !== "all") {
-    whereClause += ` AND uum.status = '${statusFilter.replace(/'/g, "")}'`;
+  const queryParams: any[] = [];
+  if (statusFilter !== "all" && allowedStatuses.includes(statusFilter)) {
+    whereClause += " AND uum.status = ?";
+    queryParams.push(statusFilter);
   }
 
-  const { results } = await env.DB.prepare(
+  let stmt = env.DB.prepare(
     `SELECT uum.*, u.username, u.email 
      FROM user_uploaded_models uum
      LEFT JOIN users u ON uum.user_id = u.user_id 
      ${whereClause}
      ORDER BY uum.created_at DESC`
-  ).all();
+  );
+  if (queryParams.length > 0) {
+    stmt = stmt.bind(...queryParams);
+  }
+  const { results } = await stmt.all();
 
   // Pending counts for sidebar badge
   const pendingCount = await env.DB.prepare(

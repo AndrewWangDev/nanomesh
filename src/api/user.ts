@@ -147,6 +147,7 @@ export async function handleDeleteAccount(req: Request, env: Env) {
   `).bind(session.userId).run();
 
   await env.DB.prepare("DELETE FROM user_oauth_bindings WHERE user_id = ?").bind(session.userId).run();
+  await env.DB.prepare("DELETE FROM user_passkeys WHERE user_id = ?").bind(session.userId).run();
 
   // Clear cookie
   const response = Response.json({ success: true });

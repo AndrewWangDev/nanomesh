@@ -208,9 +208,12 @@ export default {
         return env.ASSETS.fetch(new Request(new URL("/privacy.html", request.url)));
       }
       
-      // Serve R2 Storage (e.g. avatars)
+      // Serve R2 Storage (strictly restricted to public avatars)
       if (url.pathname.startsWith("/storage/")) {
         const key = url.pathname.slice("/storage/".length);
+        if (!key.startsWith("avatars/")) {
+          return new Response("Forbidden", { status: 403 });
+        }
         const object = await env.R2.get(key);
         if (!object) return new Response("Not Found", { status: 404 });
         

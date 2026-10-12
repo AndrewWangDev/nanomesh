@@ -50,11 +50,14 @@ export async function handleGitHubCallback(code: string, state: string, env: Env
     }
   });
   const emailsData: any[] = await emailsRes.json();
-  const primaryEmail = emailsData.find(e => e.primary)?.email || emailsData[0]?.email;
+  const verifiedPrimary = emailsData.find(e => e.primary && e.verified)?.email || emailsData.find(e => e.verified)?.email;
+  if (!verifiedPrimary) {
+    throw new Error("GitHub account has no verified email address");
+  }
   
   return {
     id: String(userData.id),
-    email: primaryEmail,
+    email: verifiedPrimary,
     username: userData.login,
     avatar_url: userData.avatar_url
   };
