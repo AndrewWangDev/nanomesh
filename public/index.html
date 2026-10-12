@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NanoMesh Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=1791300000005">
+  <link rel="stylesheet" href="/settings.css?v=1791300000005">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="icon" href="/favicon.ico?v=74" type="image/x-icon">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+</head>
+<body class="chat-body">
+  <!-- Stage 5: Off-canvas Trace History Drawer -->
+  <aside class="history-drawer" id="history-drawer">
+    <div class="history-drawer-header">
+      <div class="history-drawer-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span data-i18n="history.title">历史记录</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="history-new-chat-btn" id="history-new-chat-btn" title="新建会话" aria-label="New Chat">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"></path></svg>
+          <span data-i18n="history.newChat">新建会话</span>
+        </button>
+        <button class="history-drawer-close" id="history-drawer-close" aria-label="Close History">✕</button>
+      </div>
+    </div>
+    <div class="history-drawer-list" id="history-drawer-list">
+      <div class="history-empty" id="history-empty-state" data-i18n="history.empty">暂无历史记录</div>
+    </div>
+  </aside>
+
+  <!-- Fixed Portal Popover Menu for History Drawer 3-dots actions (Expands to the right) -->
+  <div class="trace-menu-popover-fixed" id="trace-menu-popover-fixed" style="display:none;">
+    <button class="trace-menu-item" id="trace-menu-pin-btn">
+      <span class="menu-icon">📌</span>
+      <span id="trace-menu-pin-text" data-i18n="history.pin">固定此条</span>
+    </button>
+    <button class="trace-menu-item" id="trace-menu-rename-btn">
+      <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      <span data-i18n="history.rename">重命名</span>
+    </button>
+    <div class="trace-menu-divider"></div>
+    <button class="trace-menu-item danger" id="trace-menu-delete-btn">
+      <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <span data-i18n="history.delete">删除记录</span>
+    </button>
+  </div>
+
+  <header class="header">
+    <div class="header-left">
+      <button class="history-drawer-toggle" id="history-drawer-toggle" title="历史记录 (History)" aria-label="History">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <div class="mesh-logo" style="font-size: 1.5rem;">◎</div>
+      <span>NanoMesh</span>
+      <div class="status-tooltip-wrapper">
+        <div class="status-dot"></div>
+        <div class="custom-tooltip" data-i18n="chat.status.connected">Edge node connected | Micro-models ready</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="credits-dropdown-wrapper" id="credits-menu-btn">
+        <div class="badge" title="Credits" style="cursor:pointer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--accent-color)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          <span id="credits-display">0</span>
+        </div>
+        <div id="credits-menu" class="dropdown-menu" style="display:none;">
+          <div class="dropdown-title" data-i18n="chat.credits.history">Recent Transactions</div>
+          <div class="dropdown-empty" data-i18n="chat.credits.empty">No transactions yet</div>
+          <hr class="dropdown-divider">
+          <button class="dropdown-item btn-outline" id="menu-topup-btn" style="width:100%" data-i18n="chat.credits.topup">Top Up</button>
+        </div>
+      </div>
+      <button class="top-pill" id="lang-toggle">中 / EN</button>
+      <button class="top-pill" id="theme-toggle">☀ / 🌙</button>
+      <!-- Notification Center Entry -->
+      <div class="notif-dropdown-wrapper" id="notif-dropdown-wrapper">
+        <button class="top-pill notif-btn" id="notif-btn" title="消息中心 / Notifications" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notif-dot" id="notif-dot" style="display:none;"></span>
+        </button>
+
+        <div class="notif-popover" id="notif-popover" style="display:none;">
+          <div class="notif-popover-header">
+            <div class="notif-popover-title">
+              <span data-i18n="notif.title">消息中心</span>
+            </div>
+            <button class="notif-ghost-btn" id="notif-mark-all-btn" data-i18n="notif.markAllRead">全部标为已读</button>
+          </div>
+          <div class="notif-popover-list" id="notif-popover-list">
+            <div class="notif-empty" id="notif-empty-state" data-i18n="notif.empty">暂无新消息</div>
+          </div>
+          <div class="notif-popover-footer">
+            <button class="notif-footer-link" id="notif-view-all-link" data-i18n="notif.viewAll">查看全部消息 ➔</button>
+          </div>
+        </div>
+      </div>
+      <div class="user-dropdown" id="user-menu-btn">
+        <div class="avatar" id="user-avatar">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"></path></svg>
+        </div>
+        <div id="user-menu" class="dropdown-menu" style="display:none; padding: 0;">
+          <div id="user-menu-auth" style="display: none; min-width: 250px;">
+            <!-- Part 1: Identity -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;">
+              <img id="dropdown-avatar-img" src="" style="width: 40px; height: 40px; border-radius: 50%; display: none; object-fit: cover; border: 1px solid var(--menu-avatar-border);" />
+              <div id="dropdown-avatar-text" class="avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; margin: 0; border: 1px solid var(--menu-avatar-border);"></div>
+              <div style="overflow: hidden; line-height: 1.2;">
+                <div id="dropdown-username" style="font-weight: 600; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: var(--text-primary);">User</div>
+                <div id="dropdown-email" style="font-size: 0.7rem; color: var(--menu-email-text); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; margin-top: 2px;">email@example.com</div>
+              </div>
+            </div>
+            <hr class="dropdown-divider" style="margin: 0 1rem;">
+            
+            <!-- Part 2: Quota -->
+            <div style="padding: 0.75rem 1rem;">
+              <div data-i18n="chat.menu.quota" style="font-size: 10px; color: var(--menu-quota-title); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">QUOTA</div>
+              <div style="font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between;">
+                <span data-i18n="chat.menu.points" style="color: var(--menu-item-text);">Available Points</span>
+                <span style="font-family: 'JetBrains Mono', monospace;"><span id="dropdown-points" style="color: var(--menu-points); font-weight: 500;">0</span> <span style="color: #fbbf24; margin-left: 2px;">⚡</span></span>
+              </div>
+            </div>
+            <hr class="dropdown-divider" style="margin: 0 1rem;">
+            
+            <!-- Part 3: Navigation -->
+            <div style="padding: 0.5rem 0;">
+              <button id="settings-menu-btn" class="dropdown-item group text-left" style="display: flex; align-items: center; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px; color: var(--menu-item-icon);"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <span data-i18n="chat.menu.settings">Personal Settings</span>
+              </button>
+              <a href="https://github.com/AndrewWangDev/nanomesh" target="_blank" class="dropdown-item group text-left" style="display: flex; align-items: center; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px; color: var(--menu-item-icon);"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <span data-i18n="chat.menu.api">API Documentation</span>
+              </a>
+              <a href="https://github.com/AndrewWangDev/nanomesh/issues" target="_blank" class="dropdown-item group text-left" style="display: flex; align-items: center; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px; color: var(--menu-item-icon);"><path d="M12 20h.01"></path><path d="M12 2v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M19.78 4.22l-1.42 1.42"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M19.78 19.78l-1.42-1.42"></path><circle cx="12" cy="12" r="5"></circle></svg>
+                <span data-i18n="chat.menu.issue">Report an Issue</span>
+              </a>
+            </div>
+            <hr class="dropdown-divider" style="margin: 0 1rem;">
+            
+            <!-- Part 4: Danger -->
+            <div style="padding: 0.5rem 0;">
+              <button id="logout-btn" class="dropdown-item group text-left" style="display: flex; align-items: center; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px; color: var(--menu-item-icon);"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <span data-i18n="auth.logout">Log out</span>
+              </button>
+              <button id="delete-account-btn" class="dropdown-item text-left" style="display: flex; align-items: center; color: var(--error-color); padding: 0.5rem 1rem; font-size: 0.875rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+                <span data-i18n="chat.menu.delete">Delete Account</span>
+              </button>
+            </div>
+          </div>
+          
+          <div id="user-menu-guest" style="display: block; padding: 0.5rem 0;">
+            <div style="padding: 0.5rem 1rem; font-size: 0.9rem; color: var(--text-primary);" id="guest-display" data-i18n="auth.guest">Guest</div>
+            <hr class="dropdown-divider" style="margin: 0;">
+            <button id="login-btn-guest" class="dropdown-item text-left" data-i18n="auth.login" style="padding: 0.75rem 1rem;">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Tab Switcher (Visible on < 1024px when active) -->
+  <div class="mobile-tab-switcher" id="mobile-tab-switcher" style="display:none;">
+    <button class="mobile-tab-btn active" id="tab-btn-canvas">
+      <span>📐 DAG 拓扑网格</span>
+      <span class="tab-badge" id="tab-dag-badge" style="display:none;">0/0</span>
+    </button>
+    <button class="mobile-tab-btn" id="tab-btn-stream">
+      <span>💬 对话流</span>
+    </button>
+  </div>
+
+  <div class="workspace-viewport" id="workspace-viewport">
+    <!-- Left 65% Pane: DAG Whitebox Workbench -->
+    <section class="workbench-canvas-pane" id="workbench-canvas-pane">
+      <!-- Unified Control Bar (SaaS Integrated Pill: [ ← 返回工作台 ] | 🔒 快照: ... ▼ | [ ▶ 应用修改 ]) -->
+      <div class="unified-control-bar" id="unified-control-bar" style="display:none;">
+        <button class="control-bar-ghost-btn" id="console-back-btn" title="返回首页 / Back to Home">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span data-i18n="console.back">返回工作台</span>
+        </button>
+
+        <div class="control-bar-divider"></div>
+
+        <div class="macro-capsule" id="macro-capsule-btn" title="点击切换候选工作流">
+          <span class="macro-lock-icon" id="macro-lock-icon" style="display:none;">🔒</span>
+          <span class="macro-label" id="macro-label">当前路由:</span>
+          <span class="macro-route-chain" id="macro-route-chain">图像解析 ➔ 逻辑提取 ➔ 代码生成</span>
+          <span class="macro-caret" id="macro-caret">▼</span>
+        </div>
+
+        <div class="control-bar-divider" id="control-bar-divider-reroute"></div>
+
+        <button class="macro-reroute-btn" id="macro-reroute-btn" title="应用配置并重新路由" disabled>
+          <span class="reroute-icon">▶</span>
+          <span id="macro-reroute-label">应用修改</span>
+        </button>
+
+        <div class="macro-dropdown" id="macro-dropdown" style="display:none;"></div>
+      </div>
+
+      <!-- Interactive DAG Canvas -->
+      <div class="dag-canvas-container" id="dag-canvas-container">
+        <svg class="dag-svg-canvas" id="dag-svg-canvas"></svg>
+        <div class="dag-nodes-container" id="dag-nodes-container"></div>
+      </div>
+
+      <!-- Node Inspector Floating Properties Panel (Auto-save) -->
+      <div class="node-inspector-popover" id="node-inspector-popover" style="display:none;">
+        <div class="inspector-header">
+          <div class="inspector-header-left">
+            <span class="inspector-title" id="inspector-node-title">综合理解与生成</span>
+            <span class="inspector-save-status" id="inspector-save-status"></span>
+          </div>
+          <button class="inspector-close" id="inspector-close-btn" aria-label="Close Inspector">✕</button>
+        </div>
+        <div class="inspector-body">
+          <div class="inspector-field">
+            <label class="inspector-label font-mono"><span class="inspector-label-en">MODEL SELECTION</span> <span class="inspector-label-zh">/ 执行模型</span></label>
+            <select class="inspector-select" id="inspector-model-select"></select>
+          </div>
+          <div class="inspector-field">
+            <label class="inspector-label font-mono"><span class="inspector-label-en">INJECTED DIRECTIVE</span> <span class="inspector-label-zh">/ 节点指令</span></label>
+            <textarea class="inspector-prompt" id="inspector-prompt-input" rows="3" placeholder="例：请以 Markdown 表格呈现，忽略水印..."></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right 35% Pane: Mesh Stream -->
+    <section class="stream-terminal-pane" id="stream-terminal-pane">
+      <!-- Status & Intent Arbitration Bar -->
+      <div class="arbitration-header-bar" id="arbitration-header-bar" style="display:none;">
+        <div class="arbitration-pill" id="arbitration-pill">
+          <span class="arb-icon">⚡</span>
+          <span class="arb-text" id="arb-text">正在路由仲裁...</span>
+        </div>
+        <div class="intent-pill" id="intent-pill" style="display:none;"></div>
+        <div class="cache-stream-pill" id="cache-stream-pill" style="display:none;">
+          <span>⚡ 节省算力: 命中直出</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Message & Stream Container -->
+      <div class="chat-area" id="chat-messages">
+        <!-- Stage 1 Welcome Section (Fades out smoothly in Stage 2) -->
+        <div class="welcome-section" id="welcome-section">
+          <div class="welcome-msg">
+            <div id="welcome-title" data-i18n="chat.welcome">欢迎使用 NanoMesh</div>
+            <div class="welcome-subtitle" id="welcome-subtitle" data-i18n="chat.subtitle">具备自主认知的分布式AI调度系统</div>
+          </div>
+          
+          <div class="suggested-prompts-grid" id="suggested-prompts">
+            <div class="prompt-card" data-prompt="请帮我提取这张海报中的所有文案，简述它的画面排版风格，并将主要文字翻译为地道的英文。" data-i18n-prompt="cards.image.prompt">
+              <div class="prompt-card-icon">🖼️</div>
+              <div class="prompt-card-body">
+                <div class="prompt-card-title" data-i18n="cards.image.title">解析与翻译海报图片</div>
+                <div class="prompt-card-desc" data-i18n="cards.image.desc">精准提取截图或海报中的文字与视觉元素，并一键翻译。</div>
+              </div>
+            </div>
+            <div class="prompt-card" data-prompt="请仔细阅读这份 PDF 财报，帮我总结出今年的 3 个核心业务亮点，并将关键的财务数据整理成清晰的 Markdown 表格。" data-i18n-prompt="cards.doc.prompt">
+              <div class="prompt-card-icon">📊</div>
+              <div class="prompt-card-body">
+                <div class="prompt-card-title" data-i18n="cards.doc.title">总结财报与长篇文档</div>
+                <div class="prompt-card-desc" data-i18n="cards.doc.desc">极速阅读超长 PDF，提炼核心业务结论并生成数据表格。</div>
+              </div>
+            </div>
+            <div class="prompt-card" data-prompt="请听一下这段会议录音，帮我提炼出本次会议的核心决策点，并按人员顺序列出下一步的具体行动项（Action Items）。" data-i18n-prompt="cards.audio.prompt">
+              <div class="prompt-card-icon">🎙️</div>
+              <div class="prompt-card-body">
+                <div class="prompt-card-title" data-i18n="cards.audio.title">提炼会议录音纪要</div>
+                <div class="prompt-card-desc" data-i18n="cards.audio.desc">将冗长散乱的讨论语音，转化为清晰的决策备忘与待办事项。</div>
+              </div>
+            </div>
+            <div class="prompt-card" data-prompt="请帮我编写一段快速排序的核心逻辑代码，要求函数结构清晰，并为这段代码补充完整的边界条件与容错处理。" data-i18n-prompt="cards.code.prompt">
+              <div class="prompt-card-icon">⚡</div>
+              <div class="prompt-card-body">
+                <div class="prompt-card-title" data-i18n="cards.code.title">编写与重构复杂代码</div>
+                <div class="prompt-card-desc" data-i18n="cards.code.desc">深入分析底层算法逻辑，生成优雅、安全的可运行代码片段。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="messages-flow" id="messages-flow"></div>
+      </div>
+
+      <!-- Resident Anchor Input Area (Target of Stage 2 Panic Flight) -->
+      <div class="input-area-wrapper" id="input-area-wrapper">
+        <div class="input-area" id="input-area">
+          <div class="attachments" id="attachments-preview" style="display:none;"></div>
+          
+          <div class="input-row">
+            <div class="popover-wrapper">
+              <button class="action-btn attach-btn" id="attach-btn" title="Attach Files">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+              </button>
+              <div id="attach-menu" class="upload-popover" style="display:none;">
+                <input type="file" id="upload-image" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" multiple>
+                <button class="upload-btn" onclick="document.getElementById('upload-image').click()">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span data-i18n="chat.upload.image">Image</span>
+                </button>
+                <input type="file" id="upload-audio" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm,audio/mp4" style="display:none" multiple>
+                <button class="upload-btn" onclick="document.getElementById('upload-audio').click()">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  <span data-i18n="chat.upload.audio">Audio</span>
+                </button>
+                <input type="file" id="upload-text" accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.json,.md" style="display:none" multiple>
+                <button class="upload-btn" onclick="document.getElementById('upload-text').click()">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  <span data-i18n="chat.upload.text">Text</span>
+                </button>
+              </div>
+            </div>
+
+            <textarea id="chat-input" class="chat-input" data-i18n="chat.placeholder" placeholder="输入指令，分析图片，音频或文本。" rows="1"></textarea>
+            
+            <div class="input-actions-right">
+              <div class="popover-wrapper" id="settings-popover-wrapper">
+                <button class="action-btn prefs-btn-inline" id="settings-btn" title="Settings">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <div class="settings-popover" id="settings-menu" style="display:none;">
+                  <div class="popover-arrow"></div>
+                  <div class="pref-group">
+                    <label data-i18n="chat.prefs.lang">Language</label>
+                    <div class="custom-select" id="lang-custom-select">
+                      <div class="select-trigger" id="lang-trigger">
+                        <span class="select-display" id="lang-display" data-i18n="chat.prefs.auto">Auto</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </div>
+                      <div class="select-options" id="lang-options" style="display:none;">
+                        <div class="select-option" data-value="auto" data-i18n="chat.prefs.auto">Auto</div>
+                        <div class="select-option" data-value="zh" data-i18n="chat.prefs.chinese">中文</div>
+                        <div class="select-option" data-value="en" data-i18n="chat.prefs.english">English</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pref-group">
+                    <label data-i18n="chat.prefs.style">Style</label>
+                    <div class="custom-select" id="style-custom-select">
+                      <div class="select-trigger" id="style-trigger">
+                        <span class="select-display" id="style-display" data-i18n="chat.prefs.auto">Auto</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </div>
+                      <div class="select-options" id="style-options" style="display:none;">
+                        <div class="select-option" data-value="auto" data-i18n="chat.prefs.auto">Auto</div>
+                        <div class="select-option" data-value="concise" data-i18n="chat.prefs.concise">Concise</div>
+                        <div class="select-option" data-value="detailed" data-i18n="chat.prefs.detailed">Detailed</div>
+                        <div class="select-option" data-value="creative" data-i18n="chat.prefs.creative">Creative</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="action-btn prefs-btn-inline local-inference-toggle-btn" id="local-inference-toggle-btn" title="不使用本地模型推理" type="button" aria-label="Toggle local model inference">
+                <svg class="icon-local-enabled" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <svg class="icon-local-disabled" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                  <path d="M17 17H4a2 2 0 0 1-2-2V5c0-1.5 1-2 1-2"></path>
+                  <polyline points="2 2 22 22"></polyline>
+                  <path d="M8 21h8"></path>
+                  <path d="M12 17v4"></path>
+                  <path d="M9 3h11a2 2 0 0 1 2 2v10a2 2 0 0 1-.5 1.4"></path>
+                </svg>
+              </button>
+              <div class="est-cost" id="est-cost" data-i18n="chat.est_cost">Est: ~0 ⚡</div>
+              <button class="send-btn" id="send-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="chat-disclaimer" id="chat-disclaimer" data-i18n="chat.disclaimer" data-i18n-html="true">AI 可能会犯错。使用即表示您同意我们的 <a href="/terms.html" target="_blank">服务条款</a> 与 <a href="/privacy.html" target="_blank">隐私政策</a>。</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Settings Modal Overlay -->
+  <div class="settings-modal-overlay" id="settings-modal-overlay" style="display: none;">
+    <div class="settings-modal">
+      
+      <!-- Left Sidebar -->
+      <div class="settings-sidebar">
+        <div class="settings-sidebar-header">Settings</div>
+        <ul class="settings-nav">
+          <li class="settings-nav-item active" data-tab="account">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span data-i18n="settings.nav.account">账号信息</span>
+          </li>
+          <li class="settings-nav-item" data-tab="billing">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+            <span data-i18n="settings.nav.billing">计费与额度</span>
+          </li>
+          <li class="settings-nav-item" data-tab="models">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span data-i18n="settings.nav.models">我的模型</span>
+          </li>
+          <li class="settings-nav-item" data-tab="messages">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span data-i18n="settings.nav.messages">我的消息</span>
+          </li>
+          <li class="settings-nav-item" data-tab="apikeys">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            <span data-i18n="settings.nav.apikeys">API 密钥</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Close Button Global -->
+      <button class="settings-close-btn" id="settings-close-btn" style="z-index: 10;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+
+      <!-- Right Content -->
+      <div class="settings-content">
+        
+        <!-- Tab 1: Account -->
+        <div class="settings-tab-pane active" id="settings-tab-account">
+          <h2 class="settings-pane-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="settings.account.title">账号信息</span>
+            <button class="invite-capsule" onclick="window.showInviteBubble(this, event)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+              <span data-i18n="settings.inviteNew">✦ 邀请好友 · 各得 50 ⚡</span>
+            </button>
+          </h2>
+          
+          <!-- 1. Profile Card -->
+          <div class="settings-card">
+            <div class="profile-card-header">
+              <div class="profile-info-left">
+                <img id="settings-avatar-preview" src="" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--border-color); border: 1px solid var(--dropdown-border);" />
+                <div class="profile-text">
+                  <div class="profile-name-row">
+                    <span class="profile-name" id="settings-username-display">Username</span>
+                    <div class="role-badge" data-i18n="settings.account.roleDev">Role: Developer</div>
+                  </div>
+                  <div class="profile-email-row">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span id="settings-email-display">email@example.com</span>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-avatar-actions" style="text-align: right;">
+                <label for="avatar-upload-input" class="btn btn-outline btn-sm" id="avatar-upload-btn" style="cursor: pointer;" data-i18n="settings.account.changeAvatar">更换头像</label>
+                <input type="file" id="avatar-upload-input" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                <div class="settings-hint" data-i18n="settings.account.avatarLimit">24小时内限修改一次</div>
+              </div>
+            </div>
+            
+            <hr class="settings-card-divider">
+            
+            <div class="inline-edit-row">
+              <div style="flex: 1;">
+                <label class="form-label" style="display: block; margin-bottom: 0.5rem;" data-i18n="settings.account.changeUsername">更改用户名</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <input type="text" id="settings-username-input" class="input-field inline-edit-input">
+                  <span class="settings-hint" data-i18n="auth.usernameRule" style="max-width: 160px; line-height: 1.4;">3-20位，仅限字母、数字、符号 (无空格)</span>
+                </div>
+              </div>
+              <button class="btn btn-outline" id="save-username-btn" style="margin-top: 1.5rem;" disabled data-i18n="settings.account.save">保存</button>
+            </div>
+          </div>
+
+          <!-- 2. Security Card -->
+          <div class="settings-card">
+            <div class="security-header">
+              <div class="security-title-group">
+                <h3 data-i18n="settings.account.security">密码</h3>
+                <p data-i18n="settings.account.securityHint">定期修改密码有助于保护您的账号安全</p>
+              </div>
+              <button class="btn btn-outline btn-sm" id="toggle-password-btn" data-i18n="settings.account.changePassword">修改密码</button>
+            </div>
+            
+            <div class="password-accordion" id="password-accordion">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" data-i18n="settings.account.oldPassword">旧密码</label>
+                <div class="input-group" style="margin-bottom: 0;">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <input type="password" id="settings-old-password" class="input-field" data-i18n="settings.account.oldPassword" placeholder="旧密码">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" data-i18n="settings.account.newPassword">新密码</label>
+                <div class="input-group" style="margin-bottom: 0;">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <input type="password" id="settings-new-password" class="input-field" data-i18n="settings.account.newPasswordHint" placeholder="8-64位，需包含字母和数字" style="padding-right: 4.5rem; width: 100%; box-sizing: border-box;">
+                  <div class="input-actions" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.25rem;">
+                    <button type="button" class="action-icon-btn" id="generate-pwd-btn" title="Generate Password">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.28l5.67-5.67"/></svg>
+                    </button>
+                    <button type="button" class="action-icon-btn" id="toggle-new-pwd-btn" title="Show Password">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label class="form-label" data-i18n="settings.account.confirmNewPassword">确认新密码</label>
+                <div class="input-group" style="margin-bottom: 0;">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <input type="password" id="settings-confirm-password" class="input-field" data-i18n="settings.account.confirmNewPassword" placeholder="确认新密码" style="padding-right: 2.5rem; width: 100%; box-sizing: border-box;">
+                  <div class="input-actions" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.25rem;">
+                    <button type="button" class="action-icon-btn" id="toggle-confirm-pwd-btn" title="Show Password">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="btn btn-outline" id="cancel-password-btn" data-i18n="settings.account.cancel">取消</button>
+                <button class="btn btn-primary" id="save-password-btn" data-i18n="settings.account.confirmChange">确认修改</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Passkey Management Card -->
+          <div class="settings-card" id="passkey-card" style="padding: 1.25rem 1.5rem;">
+            <div class="security-header" style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <div class="security-title-group">
+                <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="7.5" cy="15.5" r="4.5"></circle>
+                    <path d="m21 2-9.6 9.6"></path>
+                    <path d="m15.5 7.5 3 3"></path>
+                  </svg>
+                  <span data-i18n="settings.passkey.title">密钥管理</span>
+                </h3>
+                <p data-i18n="settings.passkey.desc" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">使用生物识别（Face ID、Touch ID、Windows Hello）或硬件密钥实现无密码安全登录</p>
+              </div>
+              <button class="btn btn-outline btn-sm" id="btn-add-passkey" style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span data-i18n="settings.passkey.add">添加密钥</span>
+              </button>
+            </div>
+            
+            <div id="passkey-list-container" class="passkey-list" style="margin-top: 0.75rem;">
+              <div class="passkey-loading" style="padding: 0.75rem 0; color: var(--text-secondary); font-size: 0.85rem; text-align: center;">
+                <span data-i18n="settings.passkey.loading">正在加载通行密钥...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. OAuth Bindings Card -->
+          <div class="settings-card" style="padding: 0 1.5rem;">
+            <div class="oauth-compact-row">
+              <div class="oauth-compact-info">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                <span>GitHub</span>
+              </div>
+              <button class="oauth-btn-text" id="bind-github-btn" data-i18n="settings.account.bind">绑定</button>
+            </div>
+            <div class="oauth-compact-row">
+              <div class="oauth-compact-info">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                <span>Google</span>
+              </div>
+              <button class="oauth-btn-text" id="bind-google-btn" data-i18n="settings.account.bind">绑定</button>
+            </div>
+          </div>
+
+          <!-- 4. Danger Zone -->
+          <div class="danger-card">
+            <div class="danger-info">
+              <h3 data-i18n="settings.account.dangerZone">注销账号</h3>
+              <p data-i18n="settings.account.dangerHint">此操作不可逆，将永久删除您部署的所有模型以及未结算的余额</p>
+            </div>
+            <button class="btn btn-danger-ghost" id="delete-account-modal-btn" data-i18n="settings.account.dangerZone">注销账号</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Billing -->
+        <div class="settings-tab-pane" id="settings-tab-billing">
+          <h2 class="settings-pane-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="settings.nav.billing">计费与额度</span>
+            <button class="invite-capsule" onclick="window.showInviteBubble(this, event)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+              <span data-i18n="settings.inviteNew">✦ 邀请好友 · 各得 50 ⚡</span>
+            </button>
+          </h2>
+          
+          <div class="billing-hero-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 2rem;">
+                <div class="billing-hero-left">
+                  <div class="billing-hero-label" data-i18n="settings.billing.currentQuota">可用额度</div>
+                  <div class="billing-hero-value-row">
+                    <div class="billing-hero-value"><span id="settings-points-display">100</span></div>
+                    <!-- gradient lightning SVG -->
+                    <svg class="billing-hero-bolt" viewBox="0 0 24 24" width="32" height="32" fill="url(#bolt-grad)" stroke="none">
+                      <defs>
+                        <linearGradient id="bolt-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#00c9db"/>
+                          <stop offset="100%" stop-color="#7c5cfc"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div class="billing-hero-middle" style="display:flex; align-items:center; gap: 1.25rem;">
+                  <div class="billing-hero-divider" style="height: 36px; width: 1px; background: rgba(255,255,255,0.1); margin: 0;"></div>
+                  <div class="billing-hero-metrics">
+                    <div class="billing-hero-metric">
+                      <span class="billing-metric-label" data-i18n="settings.billing.gasEarned">网格油费收益</span>
+                      <span class="billing-metric-value text-emerald">+1240 ⚡</span>
+                    </div>
+                    <div class="billing-hero-metric">
+                      <span class="billing-metric-label" data-i18n="settings.billing.frozen">执行预冻结</span>
+                      <span class="billing-metric-value text-muted">0 ⚡</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="billing-hero-actions">
+                <button class="btn btn-primary btn-sm" id="billing-topup-btn" data-i18n="settings.billing.topup" onclick="if (window.openRechargeModal) window.openRechargeModal();">立即充值</button>
+              </div>
+            </div>
+
+            <!-- Unified Ledger Card -->
+            <div class="billing-card">
+              <div class="billing-card-header">
+                <div class="billing-card-title" data-i18n="settings.billing.ledgerTitle">额度流水明细</div>
+                <div class="billing-filters">
+                  <button class="billing-filter-pill active" data-filter="all" data-i18n="settings.billing.filterAll">全部</button>
+                  <button class="billing-filter-pill" data-filter="compute" data-i18n="settings.billing.filterCompute">算力消耗</button>
+                  <button class="billing-filter-pill" data-filter="gas" data-i18n="settings.billing.filterGas">油费与奖励</button>
+                  <button class="billing-filter-pill" data-filter="topup" data-i18n="settings.billing.filterTopup">充值</button>
+                </div>
+              </div>
+              <table class="billing-table">
+                <thead>
+                  <tr>
+                    <th class="col-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" data-i18n="settings.billing.colDesc">账单明细</th>
+                    <th class="col-category" data-i18n="settings.billing.colCategory">类型</th>
+                    <th class="col-time" data-i18n="settings.billing.colTime">时间</th>
+                    <th class="col-delta" style="text-align: right;" data-i18n="settings.billing.colDelta">额度变动</th>
+                  </tr>
+                </thead>
+                <tbody id="billing-tbody">
+                  <!-- Dynamic rows rendered by app.js -->
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Models -->
+        <div class="settings-tab-pane" id="settings-tab-models">
+          <div class="models-header">
+            <div class="models-header-left">
+              <h2 class="settings-pane-title" style="margin: 0 0 0.25rem 0;" data-i18n="settings.nav.models">我的模型</h2>
+              <span class="models-subtitle" data-i18n="models.supportText">支持 .gguf, .safetensors 权重文件（单文件最大 3GB）</span>
+            </div>
+            <button class="models-upload-btn" id="btn-upload-model">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span data-i18n="models.upload">上传模型</span>
+            </button>
+          </div>
+
+          <div class="models-card">
+            <table class="models-table">
+              <thead>
+                <tr>
+                  <th class="models-th-model" data-i18n="settings.models.colModel">模型与规格</th>
+                  <th class="models-th-usage" data-i18n="settings.models.colUsage">调用与评分</th>
+                  <th class="models-th-status" data-i18n="settings.models.colStatus">审核状态</th>
+                  <th class="models-th-action" data-i18n="settings.models.colAction">操作</th>
+                </tr>
+              </thead>
+              <tbody id="user-models-tbody"></tbody>
+            </table>
+            <div class="models-card-footer">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span><span data-i18n="settings.models.contactSupport">审核通过的节点无法直接删除。如需下架，请联系</span> <a href="mailto:support@andrewwangdev.com" class="models-footer-email">support@andrewwangdev.com</a></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: API Keys -->
+        <div class="settings-tab-pane" id="settings-tab-apikeys">
+          <h2 class="settings-pane-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="settings.nav.apikeys">API 密钥</span>
+            <button class="invite-capsule" onclick="window.showInviteBubble(this, event)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+              <span data-i18n="settings.inviteNew">✦ 邀请好友 · 各得 50 ⚡</span>
+            </button>
+          </h2>
+          <div class="settings-empty-state">
+            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            <div class="settings-empty-title" data-i18n="settings.apikeys.emptyTitle">API 密钥管理功能即将上线</div>
+            <div class="settings-empty-desc" data-i18n="settings.apikeys.emptyDesc">我们正在致力于构建企业级的 API 分发面板，敬请期待。</div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Messages -->
+        <div class="settings-tab-pane" id="settings-tab-messages">
+          <h2 class="settings-pane-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="settings.nav.messages">我的消息</span>
+            <button class="btn btn-outline btn-sm" id="messages-mark-all-btn" data-i18n="notif.markAllRead">全部标为已读</button>
+          </h2>
+
+          <!-- Filter Pills -->
+          <div class="messages-filter-row" style="margin-bottom: 1.25rem;">
+            <div class="filter-pills" id="messages-filter-pills" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="messages-filter-pill active" data-filter="all" data-i18n="notif.filterAll">全部</button>
+              <button class="messages-filter-pill" data-filter="unread" data-i18n="notif.filterUnread">未读</button>
+              <button class="messages-filter-pill" data-filter="model" data-i18n="notif.filterModel">模型通知</button>
+              <button class="messages-filter-pill" data-filter="billing" data-i18n="notif.filterBilling">财务额度</button>
+              <button class="messages-filter-pill" data-filter="system" data-i18n="notif.filterSystem">系统公告</button>
+            </div>
+          </div>
+
+          <!-- Messages List Container -->
+          <div class="settings-messages-container" id="settings-messages-container">
+            <div class="settings-messages-list" id="settings-messages-list"></div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title" id="modal-title">Title</h3>
+      <div class="modal-body" id="modal-body">Body text</div>
+      <div class="modal-footer" id="modal-footer">
+        <button class="btn btn-outline" onclick="hideModal()" data-i18n="common.cancel" style="border-radius: 8px; padding: 0.5rem 1rem;">Cancel</button>
+        <button class="btn btn-primary" id="modal-primary-btn" onclick="hideModal()" data-i18n="common.gotIt" style="border-radius: 8px; padding: 0.5rem 1rem;">Got it</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="compliance-modal-overlay" style="background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); z-index: 10000;">
+    <div class="compliance-modal">
+      <div class="compliance-header">
+        <h3 class="compliance-title" data-i18n="compliance.title">模型上传与部署合规声明</h3>
+        <p class="compliance-subtitle" data-i18n="compliance.subtitle">为了保障 NanoMesh 生态安全与您的合法权益，在将模型权重接入 NanoMesh 调度网络前，请仔细阅读并确认以下合规条款。</p>
+      </div>
+      <div class="compliance-content">
+        <div class="compliance-item">
+          <div class="compliance-item-header">
+            <span class="compliance-icon">⚖️</span>
+            <strong data-i18n="compliance.item1.title">版权与许可规范</strong>
+          </div>
+          <ul class="compliance-list">
+            <li data-i18n="compliance.item1.desc1">您保证上传的模型权重及结构未侵犯任何第三方的知识产权。</li>
+            <li data-i18n="compliance.item1.desc2">严禁上传闭源商业泄露模型或违反原作者开源协议（如违背商业授权限制）的微调模型。</li>
+          </ul>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-item-header">
+            <span class="compliance-icon">🛡️</span>
+            <strong data-i18n="compliance.item2.title">内容安全规范</strong>
+          </div>
+          <ul class="compliance-list">
+            <li data-i18n="compliance.item2.desc1">您承诺该模型未经过恶意训练。严禁生成儿童色情、极端暴力、恐怖主义宣扬、仇恨言论等违反法律法规的违法违规内容。</li>
+          </ul>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-item-header">
+            <span class="compliance-icon">🔒</span>
+            <strong data-i18n="compliance.item3.title">隐私与数据规范</strong>
+          </div>
+          <ul class="compliance-list">
+            <li data-i18n="compliance.item3.desc1">您承诺模型内部未植入任何形式的后门指令、钓鱼提示词注入或用户数据窃取机制等。</li>
+            <li data-i18n="compliance.item3.desc2">您承诺您上传的模型，不得直接或间接地绕过我们的安全规范，不得破坏 NanoMesh 正常运营，不得侵犯 NanoMesh 和他人的合法权益。</li>
+          </ul>
+        </div>
+        <p class="compliance-warning-text" data-i18n="compliance.warning">NanoMesh 会对每一个接入模型进行安全审计。如发现违规，平台有权无条件阻断该节点、下架模型、冻结所有额度/积分、并永久封禁您的开发者账号。情节严重的，我们将会报告相应机关处理。</p>
+      </div>
+      <div class="compliance-footer">
+        <label class="compliance-checkbox-label">
+          <input type="checkbox" id="compliance-checkbox">
+          <span class="compliance-checkbox-text">
+            <span data-i18n="compliance.checkbox">我已阅读、理解并承诺完全遵守上述合规要求及《</span><a href="/terms" target="_blank" class="compliance-link" data-i18n="compliance.terms">NanoMesh 服务条款</a><span data-i18n="compliance.checkboxEnd">》。</span>
+          </span>
+        </label>
+        <div class="compliance-actions">
+          <button class="btn btn-outline" id="compliance-cancel-btn" data-i18n="compliance.decline">拒绝并取消</button>
+          <button class="btn btn-primary" id="compliance-agree-btn" data-i18n="compliance.agree" disabled style="opacity: 0.5; cursor: not-allowed;">同意并继续上传</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Form Modal -->
+  <div class="modal-overlay" id="upload-form-overlay" style="background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); z-index: 10000;">
+    <div class="compliance-modal" style="max-width: 560px;">
+      <div class="compliance-header">
+        <h3 class="compliance-title" data-i18n="upload.formTitle">提交模型信息</h3>
+        <p class="compliance-subtitle" data-i18n="upload.formSubtitle">请填写模型的基本信息，便于平台审核与调度网络接入。</p>
+      </div>
+      <div class="compliance-content" style="gap: 1.25rem;">
+
+        <!-- Drop Zone -->
+        <div class="upload-dropzone" id="upload-dropzone">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="upload-dropzone-text" data-i18n="upload.dropzone">拖拽文件至此处，或点击选择文件</p>
+          <span class="upload-dropzone-hint" data-i18n="upload.dropzoneHint">仅支持 .gguf / .safetensors 格式，最大 3GB</span>
+          <input type="file" id="upload-file-input" accept=".gguf,.safetensors" style="display:none;">
+        </div>
+        <div class="upload-file-info" id="upload-file-info" style="display:none;">
+          <span class="upload-file-name" id="upload-file-name"></span>
+          <button class="upload-file-remove" id="upload-file-remove">&times;</button>
+        </div>
+
+        <!-- Display Name -->
+        <div class="upload-field">
+          <label class="upload-label" data-i18n="upload.displayName">模型显示名称</label>
+          <input type="text" id="upload-display-name" class="input-field" maxlength="50" placeholder="Llama3-8B-Medical-ZH" data-i18n-placeholder="upload.displayNamePlaceholder">
+          <span class="upload-hint" data-i18n="upload.displayNameRule">3~50 字符，仅限字母、数字、连字符</span>
+        </div>
+
+        <!-- Param Scale -->
+        <div class="upload-field">
+          <label class="upload-label" data-i18n="upload.paramScale">模型参数量级</label>
+          <div class="upload-segmented" id="upload-param-scale">
+            <button type="button" class="upload-seg-btn active" data-value="lt1b" data-i18n="upload.paramScale.lt1b">&lt; 1B</button>
+            <button type="button" class="upload-seg-btn" data-value="1b_3b" data-i18n="upload.paramScale.1b_3b">1B ~ 3B</button>
+            <button type="button" class="upload-seg-btn" data-value="7b_9b" data-i18n="upload.paramScale.7b_9b">7B ~ 9B</button>
+            <button type="button" class="upload-seg-btn" data-value="13b_14b" data-i18n="upload.paramScale.13b_14b">13B ~ 14B</button>
+            <button type="button" class="upload-seg-btn" data-value="30b_plus" data-i18n="upload.paramScale.30b_plus">30B+</button>
+          </div>
+        </div>
+
+        <!-- Input Modalities (multi-select capsules) -->
+        <div class="upload-field">
+          <label class="upload-label"><span data-i18n="upload.inModalities">支持的输入模态</span> <span class="upload-hint-inline" data-i18n="upload.inModalities.hint">至少选择 1 项</span></label>
+          <div class="upload-capsule-group" id="upload-in-modalities">
+            <label class="upload-capsule"><input type="checkbox" value="text" checked><span data-i18n="upload.modality.text">文本 Text</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="image"><span data-i18n="upload.modality.image">图片 Image</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="audio"><span data-i18n="upload.modality.audio">音频 Audio</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="video"><span data-i18n="upload.modality.video">视频 Video</span></label>
+          </div>
+        </div>
+
+        <!-- Output Modality (single-select radio pills) -->
+        <div class="upload-field">
+          <label class="upload-label" data-i18n="upload.outModality">产生的输出模态</label>
+          <div class="upload-capsule-group" id="upload-out-modality">
+            <label class="upload-capsule"><input type="radio" name="out-modality" value="text" checked><span data-i18n="upload.modality.text">文本 Text</span></label>
+            <label class="upload-capsule"><input type="radio" name="out-modality" value="image"><span data-i18n="upload.modality.image">图片 Image</span></label>
+            <label class="upload-capsule"><input type="radio" name="out-modality" value="audio"><span data-i18n="upload.modality.audio">音频 Audio</span></label>
+          </div>
+        </div>
+
+        <!-- Capability Tags (max 3) -->
+        <div class="upload-field">
+          <label class="upload-label"><span data-i18n="upload.capabilityTags">核心能力标签</span> <span class="upload-hint-inline" data-i18n="upload.capabilityTags.hint">最多选择 3 个</span></label>
+          <div class="upload-capsule-group upload-tags-group" id="upload-capability-tags">
+            <label class="upload-capsule"><input type="checkbox" value="ocr"><span data-i18n="upload.tag.ocr">OCR 提取</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="translation"><span data-i18n="upload.tag.translation">多语种翻译</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="code_gen"><span data-i18n="upload.tag.code_gen">代码生成</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="summarization"><span data-i18n="upload.tag.summarization">结构化总结</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="creative_writing"><span data-i18n="upload.tag.creative_writing">创意写作</span></label>
+            <label class="upload-capsule"><input type="checkbox" value="speech_transcription"><span data-i18n="upload.tag.speech_transcription">语音转写</span></label>
+          </div>
+        </div>
+
+        <!-- Context Window (segmented control) -->
+        <div class="upload-field">
+          <label class="upload-label" data-i18n="upload.contextWindow">最大上下文窗口</label>
+          <div class="upload-segmented" id="upload-context-window">
+            <button type="button" class="upload-seg-btn active" data-value="4096">4K</button>
+            <button type="button" class="upload-seg-btn" data-value="8192">8K</button>
+            <button type="button" class="upload-seg-btn" data-value="16384">16K</button>
+            <button type="button" class="upload-seg-btn" data-value="32768">32K</button>
+            <button type="button" class="upload-seg-btn" data-value="131072">128K</button>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="upload-field">
+          <label class="upload-label" data-i18n="upload.description">模型简介 / 描述</label>
+          <textarea id="upload-description" class="input-field upload-textarea" rows="3" maxlength="200" data-i18n-placeholder="upload.descriptionPlaceholder" placeholder="该模型针对什么垂直场景做过微调？擅长什么？不擅长什么？"></textarea>
+          <div class="upload-desc-footer">
+            <span class="upload-hint" data-i18n="upload.descriptionRule">必填，20~200 字</span>
+            <span class="upload-char-count" id="upload-char-count">0 / 200</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="compliance-footer">
+        <div class="compliance-actions">
+          <button class="btn btn-outline" id="upload-form-cancel" data-i18n="upload.cancel">取消</button>
+          <button class="btn btn-primary" id="upload-form-submit" data-i18n="upload.submit">提交审核</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Recharge & Redeem Modal -->
+  <div class="modal-overlay" id="recharge-modal-overlay" style="display: none; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;">
+    <div class="modal recharge-modal" style="width: 100%; max-width: 460px; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5); position: relative; animation: modalFadeIn 0.2s ease-out;">
+      
+      <!-- Top Title Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px;" data-i18n="recharge.title">
+          充值与兑换
+        </h3>
+        <button type="button" id="close-recharge-modal-btn" class="modal-close-btn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Layer 1: Payment Methods Grid (4 cols) -->
+      <div style="margin-bottom: 18px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+          <!-- Gift Code (Active) -->
+          <div class="recharge-method-card active" data-method="gift">
+            <div class="method-icon-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+            </div>
+            <span class="method-name" data-i18n="recharge.method.gift">兑换码</span>
+          </div>
+
+          <!-- Crypto (Disabled + Tooltip) -->
+          <div class="recharge-method-card disabled has-recharge-tooltip" data-method="crypto">
+            <span class="recharge-tooltip" data-i18n="recharge.tooltip.comingSoon">✨ 即将上线</span>
+            <div class="method-icon-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042l-.347 1.97m1.563-8.864c3.938.694 4.912-4.82 1.074-5.514m-1.074 5.514L8.14 11.238m5.01-4.244l.347-1.97M8.14 11.238L9.043 6.11m-1.808 11.05l-.903 5.127m2.71-10.254L6.33 6.994"></path></svg>
+            </div>
+            <span class="method-name" data-i18n="recharge.method.crypto">Crypto</span>
+          </div>
+
+          <!-- PayPal (Disabled + Tooltip) -->
+          <div class="recharge-method-card disabled has-recharge-tooltip" data-method="paypal">
+            <span class="recharge-tooltip" data-i18n="recharge.tooltip.comingSoon">✨ 即将上线</span>
+            <div class="method-icon-box">
+              <span style="font-weight: 800; font-size: 16px; font-family: sans-serif;">P</span>
+            </div>
+            <span class="method-name" data-i18n="recharge.method.paypal">PayPal</span>
+          </div>
+
+          <!-- Card (Disabled + Tooltip) -->
+          <div class="recharge-method-card disabled has-recharge-tooltip" data-method="card">
+            <span class="recharge-tooltip" data-i18n="recharge.tooltip.comingSoon">✨ 即将上线</span>
+            <div class="method-icon-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            </div>
+            <span class="method-name" data-i18n="recharge.method.card">VISA/Master</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 2: Quota Packages (Locked Overlay in Gift Code mode) -->
+      <div class="recharge-packages-wrapper" id="recharge-packages-wrapper" style="position: relative; margin-bottom: 18px;">
+        <div class="recharge-packages-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div class="recharge-pkg-card" data-pkg="pkg_10k">
+            <div class="pkg-credits">10,000 ⚡</div>
+            <div class="pkg-price">$1.00</div>
+          </div>
+          <div class="recharge-pkg-card" data-pkg="pkg_50k">
+            <div class="pkg-credits">50,000 ⚡</div>
+            <div class="pkg-price">$4.80</div>
+          </div>
+          <div class="recharge-pkg-card" data-pkg="custom">
+            <div class="pkg-credits" data-i18n="recharge.package.custom">自定义</div>
+            <div class="pkg-price">Flex</div>
+          </div>
+        </div>
+        <!-- Lock Mask Overlay for Gift Code mode -->
+        <div class="recharge-pkg-lock-mask" id="recharge-pkg-lock-mask" style="position: absolute; inset: 0; background: rgba(18, 18, 28, 0.82); backdrop-filter: blur(2px); border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 12px; border: 1px dashed rgba(255, 255, 255, 0.15);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; display: flex; align-items: center; gap: 6px;" data-i18n="recharge.package.lockHint">
+            🔒 使用兑换码时由卡密自动分配额度
+          </span>
+        </div>
+      </div>
+
+      <!-- Layer 3: Dynamic Form Inputs -->
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <!-- Input A: Gift Code -->
+        <div>
+          <div class="input-group" style="margin-bottom: 0; position: relative;">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+            <input type="text" id="recharge-gift-code-input" class="input-field" data-i18n-placeholder="recharge.input.giftPlaceholder" placeholder="请输入 16 位兑换码 (XXXX-XXXX-XXXX-XXXX)" maxlength="19" autocomplete="off" spellcheck="false" style="padding-left: 42px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; text-transform: uppercase;">
+          </div>
+          <div id="recharge-error-msg" style="display: none; color: var(--error-color); font-size: 0.78rem; margin-top: 6px; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span id="recharge-error-text"></span>
+          </div>
+        </div>
+
+        <!-- Input B: Promo Code (Disabled in Gift Mode) -->
+        <div>
+          <div class="input-group" style="margin-bottom: 0; position: relative;">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); opacity: 0.5;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+            <input type="text" id="recharge-promo-code-input" class="input-field disabled-promo" data-i18n-placeholder="recharge.input.promoDisabled" placeholder="选择在线支付以使用优惠码" disabled style="padding-left: 42px; opacity: 0.5; background: rgba(255, 255, 255, 0.03); cursor: not-allowed;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 4: Action Button -->
+      <div>
+        <button type="button" id="recharge-submit-btn" class="btn btn-primary glow" style="width: 100%; height: 44px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span id="recharge-btn-text" data-i18n="recharge.btn.redeem">立即兑换</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module">
+    import { init } from './i18n.js?v=1791547200000';
+    init();
+  </script>
+  <script type="module" src="/app.js?v=1791547200000"></script>
+</body>
+</html>

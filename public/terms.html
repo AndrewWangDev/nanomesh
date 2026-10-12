@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NanoMesh - 服务条款 / Terms of Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=1791272211583">
+  <link rel="icon" href="/favicon.ico?v=74" type="image/x-icon">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+</head>
+<body class="legal-page">
+  <!-- Header aligned with root / header -->
+  <header class="header">
+    <div class="header-left">
+      <a href="/" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none; color:inherit;">
+        <div class="mesh-logo" style="font-size: 1.5rem;">◎</div>
+        <span>NanoMesh</span>
+      </a>
+    </div>
+    <div class="header-right">
+      <button class="top-pill" id="legal-back-btn" title="返回 / Back">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <span data-i18n="legal.back">返回</span>
+      </button>
+      <button class="top-pill" id="lang-toggle">中 / EN</button>
+      <button class="top-pill" id="theme-toggle">☀ / 🌙</button>
+    </div>
+  </header>
+
+  <!-- Typography-first Legal Body -->
+  <main class="legal-main">
+    <header class="legal-hero">
+      <h1 class="legal-title" data-i18n="terms.title">NanoMesh 服务条款</h1>
+      <div class="legal-meta" data-i18n="terms.updated">最后更新日期：2026-10-05</div>
+    </header>
+
+    <div class="legal-welcome" data-i18n="terms.welcome">
+      欢迎使用 NanoMesh（以下简称“本服务”或“本平台”）。请在使用前仔细阅读以下条款。
+    </div>
+
+    <!-- Section 1 -->
+    <section>
+      <h2 class="legal-section-h2" data-i18n="terms.sec1.title">一、 可接受的使用政策</h2>
+      <p class="legal-p" data-i18n="terms.sec1.lead">您同意在使用 NanoMesh 时严格遵守以下行为准则：</p>
+      
+      <h3 class="legal-section-h3" data-i18n="terms.sec1.item1.title">系统与网络安全</h3>
+      <p class="legal-p" data-i18n="terms.sec1.item1.desc">
+        严禁使用恶意脚本、实施欺诈、发布广告垃圾信息或进行钓鱼攻击。禁止对本平台进行逆向工程、破解，或以任何方式干扰 NanoMesh 的正常运行。
+      </p>
+
+      <h3 class="legal-section-h3" data-i18n="terms.sec1.item2.title">合法权益与数字资产保护</h3>
+      <p class="legal-p" data-i18n="terms.sec1.item2.desc">
+        不得侵犯 NanoMesh 及任何第三方的合法权益（包括知识产权与隐私权）。严禁植入后门指令、严禁执行钓鱼性质的提示词注入，禁止任何形式的数据窃取行为。
+      </p>
+    </section>
+
+    <!-- Section 2 -->
+    <section>
+      <h2 class="legal-section-h2" data-i18n="terms.sec2.title">二、 免责声明</h2>
+      <p class="legal-p" data-i18n="terms.sec2.desc">
+        NanoMesh 作为一个分布式 AI 算力编排平台，我们不承诺本服务一定能够无中断或无错误地正常运行，不保证节点随时可用。
+      </p>
+    </section>
+
+    <!-- Section 3 -->
+    <section>
+      <h2 class="legal-section-h2" data-i18n="terms.sec3.title">三、 内容责任限制</h2>
+      <p class="legal-p" data-i18n="terms.sec3.desc">
+        由平台模型生成的结果仅供参考。用户必须自行审查和核实模型生成的所有内容。对于因使用或依赖该等生成内容而造成的任何直接或间接损失，NanoMesh 不承担任何法律及赔偿责任。
+      </p>
+    </section>
+
+    <!-- Section 4 -->
+    <section>
+      <h2 class="legal-section-h2" data-i18n="terms.sec4.title">四、 联系我们</h2>
+      <p class="legal-p">
+        <span data-i18n="terms.sec4.desc">如对服务条款有任何疑问，或需要报告滥用行为，请联系：</span>
+        <a href="mailto:support@andrewwangdev.com" class="legal-email-link">support@andrewwangdev.com</a>
+      </p>
+    </section>
+
+    <!-- Cross Reference Link at bottom -->
+    <div class="legal-cross-reference">
+      <span data-i18n="legal.seeAlso">另请参阅：</span>
+      <a href="/privacy" class="legal-text-link" data-i18n="legal.viewPrivacy">NanoMesh 隐私政策 ➔</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { init, setLocale, getLocale } from './i18n.js?v=1791272211583';
+    init();
+
+    // Back navigation
+    const backBtn = document.getElementById('legal-back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        if (document.referrer && document.referrer.includes(window.location.host)) {
+          window.location.href = document.referrer;
+          return;
+        }
+        window.location.href = '/';
+      });
+    }
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('nanomesh-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('nanomesh-theme', next);
+      });
+    }
+
+    // Lang Toggle
+    const langBtn = document.getElementById('lang-toggle');
+    if (langBtn) {
+      langBtn.addEventListener('click', () => {
+        const nextLang = getLocale() === 'zh' ? 'en' : 'zh';
+        setLocale(nextLang);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NanoMesh Admin Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=1791272211582">
+  <style>
+    :root {
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.15);
+
+      --admin-sidebar-width: 240px;
+      --admin-header-height: 64px;
+      --admin-bg: #090a10;
+      --admin-surface: #11131f;
+      --admin-surface-card: rgba(23, 26, 42, 0.7);
+      --admin-border: rgba(255, 255, 255, 0.12);
+      --admin-border-subtle: rgba(255, 255, 255, 0.05);
+      --admin-accent: #6366f1;
+      --admin-accent-glow: rgba(99, 102, 241, 0.3);
+    }
+
+    body {
+      background: var(--admin-bg);
+      color: #e4e4e7;
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+    }
+
+    /* Login Centered Style */
+    #login-section {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.12), transparent 70%), var(--admin-bg);
+      z-index: 1000;
+    }
+    .admin-login-card {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      text-align: center;
+      backdrop-filter: blur(16px);
+    }
+    .admin-login-card h2 {
+      margin: 12px 0 6px 0;
+      font-weight: 700;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .admin-login-card p {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      margin-bottom: 28px;
+    }
+
+    /* Main Console Layout */
+    #admin-section {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: var(--admin-sidebar-width);
+      background: var(--admin-surface);
+      border-right: 1px solid var(--admin-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 20;
+    }
+    .sidebar-brand {
+      height: var(--admin-header-height);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--admin-border-subtle);
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+    .sidebar-brand svg {
+      color: var(--admin-accent);
+    }
+    .sidebar-nav {
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
+    .nav-item.active {
+      background: rgba(99, 102, 241, 0.14);
+      color: #818cf8;
+      font-weight: 600;
+    }
+    .nav-item-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+    .nav-badge.active-badge {
+      background: rgba(99, 102, 241, 0.25);
+      color: #c7d2fe;
+    }
+
+    /* Main Content Area */
+    .admin-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--admin-bg);
+    }
+    .admin-header {
+      height: var(--admin-header-height);
+      border-bottom: 1px solid var(--admin-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(17, 19, 31, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-header-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .admin-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .admin-content-view {
+      padding: 32px;
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+      display: none;
+    }
+    .admin-content-view.active-view {
+      display: block;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Metric Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--admin-surface-card);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-val {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Form Card */
+    .admin-card {
+      background: var(--admin-surface-card);
+      border: 1px solid var(--admin-border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .admin-card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Filter Pill Row */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    /* Button styles & Sizes - Clear, High Contrast, Anti-collapse */
+    .btn {
+      font-family: inherit;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    .btn-sm {
+      padding: 6px 14px !important;
+      font-size: 0.82rem !important;
+      font-weight: 500 !important;
+      border-radius: 6px !important;
+      height: 32px !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      box-sizing: border-box !important;
+      flex-shrink: 0 !important;
+    }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      color: #f1f5f9 !important;
+      transition: all 0.15s ease;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border-color: rgba(255, 255, 255, 0.45) !important;
+      color: #ffffff !important;
+    }
+    .btn-outline svg {
+      color: #cbd5e1 !important;
+    }
+    .btn-outline:hover svg {
+      color: #ffffff !important;
+    }
+
+    .btn-danger-outline {
+      background: rgba(239, 68, 68, 0.12) !important;
+      border: 1px solid rgba(239, 68, 68, 0.5) !important;
+      color: #fca5a5 !important;
+      transition: all 0.15s ease;
+    }
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.25) !important;
+      border-color: #ef4444 !important;
+      color: #ffffff !important;
+    }
+
+    /* Top pill (Language toggle) */
+    .top-pill {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: #f1f5f9 !important;
+      font-weight: 500 !important;
+      padding: 6px 14px !important;
+      border-radius: 20px !important;
+      font-size: 0.85rem !important;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .top-pill:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .filter-pill {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .filter-pill:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .filter-pill.active {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .admin-table-container {
+      background: var(--admin-surface-card);
+      border: 1px solid var(--admin-border);
+      border-radius: 14px;
+      overflow-x: auto;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .admin-table th {
+      padding: 14px 16px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      border-bottom: 1px solid var(--admin-border);
+      background: rgba(255, 255, 255, 0.02);
+      font-weight: 600;
+    }
+    .admin-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--admin-border-subtle);
+      vertical-align: middle;
+      font-size: 0.88rem;
+    }
+    .admin-table tr:last-child td {
+      border-bottom: none;
+    }
+    .admin-table tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .admin-meta-text {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      margin-top: 3px;
+      display: block;
+    }
+
+    .action-buttons-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      white-space: nowrap;
+      min-width: 140px;
+    }
+
+    /* Status Badges */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-active { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-redeemed { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-expired { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-revoked { background: rgba(113, 113, 122, 0.2); color: #a1a1aa; border: 1px solid rgba(113, 113, 122, 0.3); }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-published { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .badge-rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Custom Input Presets */
+    .preset-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--admin-border);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .preset-btn.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: #6366f1;
+      color: #818cf8;
+      font-weight: 600;
+    }
+
+    /* Modal dialog */
+    .admin-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .admin-modal-box {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      animation: fadeIn 0.2s ease-out;
+    }
+    .codes-result-area {
+      background: #09090b;
+      border: 1px solid var(--admin-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      max-height: 240px;
+      overflow-y: auto;
+      white-space: pre;
+      line-height: 1.6;
+      margin: 16px 0;
+      user-select: text;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Login Section -->
+  <div id="login-section">
+    <div class="admin-login-card">
+      <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--admin-accent); margin-bottom:8px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <h2>NanoMesh Console</h2>
+      <p id="t-login-subtitle">System Administration & Operations</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="position:relative;">
+          <input type="password" id="admin-password" class="input-field" placeholder="Enter admin password" style="padding-left:42px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-secondary);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+        <button class="btn btn-primary" id="btn-login" style="width:100%; height:44px; font-weight:600;">Authenticate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel Section -->
+  <div id="admin-section">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+        NanoMesh Admin
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-item active" data-tab="models" id="nav-tab-models">
+          <div class="nav-item-content">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span id="t-nav-models">模型审核</span>
+          </div>
+          <span class="nav-badge" id="sidebar-pending-badge">0</span>
+        </div>
+
+        <div class="nav-item" data-tab="gift-codes" id="nav-tab-gift-codes">
+          <div class="nav-item-content">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+            <span id="t-nav-giftcodes">兑换码管理</span>
+          </div>
+        </div>
+
+        <div class="nav-item" data-tab="notifications" id="nav-tab-notifications">
+          <div class="nav-item-content">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span id="t-nav-notifications">消息推送</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Body Area -->
+    <div class="admin-main">
+      <!-- Header -->
+      <div class="admin-header">
+        <div class="admin-header-title">
+          <span id="header-view-title">模型审核</span>
+        </div>
+        <div class="admin-header-actions">
+          <button class="top-pill" id="admin-lang-toggle">中 / EN</button>
+          <button class="btn btn-outline btn-sm" id="btn-logout" style="display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span id="t-logout">退出</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- View 1: Model Approvals -->
+      <div class="admin-content-view active-view" id="view-models">
+        <div class="filter-row">
+          <div class="filter-pills" id="model-filter-pills">
+            <button class="filter-pill active" data-status="all">全部</button>
+            <button class="filter-pill" data-status="pending">待审核</button>
+            <button class="filter-pill" data-status="approved">已通过</button>
+            <button class="filter-pill" data-status="published">已上线</button>
+            <button class="filter-pill" data-status="rejected">已拒绝</button>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btn-refresh-models" style="display:flex; align-items:center; gap:4px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            刷新
+          </button>
+        </div>
+
+        <div class="admin-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 20%;">提交者</th>
+                <th style="width: 24%;">模型规格</th>
+                <th style="width: 22%;">权重文件</th>
+                <th style="width: 12%;">状态</th>
+                <th style="width: 22%; text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="models-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- View 2: Gift Code Console -->
+      <div class="admin-content-view" id="view-gift-codes">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line></svg>
+              <span>未使用卡密</span>
+            </div>
+            <div class="stat-val" id="stat-active-count" style="color:#34d399;">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <span>未使用总额度</span>
+            </div>
+            <div class="stat-val" id="stat-active-credits" style="color:#818cf8;">0 ⚡</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span>已兑换</span>
+            </div>
+            <div class="stat-val" id="stat-redeemed-count" style="color:#60a5fa;">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              <span>已吊销</span>
+            </div>
+            <div class="stat-val" id="stat-revoked-count" style="color:#a1a1aa;">0</div>
+          </div>
+        </div>
+
+        <!-- Create Form Card -->
+        <div class="admin-card">
+          <div class="admin-card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--admin-accent);"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>批量生成兑换码</span>
+          </div>
+
+          <form id="create-gift-codes-form">
+            <!-- Row 1: Amount -->
+            <div style="margin-bottom: 16px;">
+              <label class="form-label" style="display:block; margin-bottom:6px; font-size:0.85rem;">卡密额度 (⚡ Points)</label>
+              <div class="preset-pills" id="amount-presets">
+                <button type="button" class="preset-btn" data-amt="1000">1,000 ⚡</button>
+                <button type="button" class="preset-btn active" data-amt="10000">10,000 ⚡</button>
+                <button type="button" class="preset-btn" data-amt="50000">50,000 ⚡</button>
+              </div>
+              <input type="number" id="create-amount-input" class="input-field" value="10000" min="1" max="10000000" style="max-width: 280px;" required>
+            </div>
+
+            <!-- Row 2: Expiration Date & Time -->
+            <div style="margin-bottom: 16px;">
+              <label class="form-label" style="display:block; margin-bottom:6px; font-size:0.85rem;">有效期设定</label>
+              <div style="display:flex; align-items:center; gap:20px; margin-bottom:8px;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                  <input type="radio" name="expiry-type" value="expire" checked>
+                  <span>指定截止时间</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                  <input type="radio" name="expiry-type" value="never">
+                  <span>永不过期 (Never Expires)</span>
+                </label>
+              </div>
+              <div id="expiry-time-picker-box" style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <input type="datetime-local" id="create-expiry-input" class="input-field" step="3600" style="max-width: 280px;">
+                  <span id="timezone-hint" style="font-size:0.78rem; color:var(--text-secondary); background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:6px;"></span>
+                </div>
+                <div class="preset-pills" id="expiry-quick-buttons">
+                  <button type="button" class="preset-btn" data-days="7">+7 天</button>
+                  <button type="button" class="preset-btn" data-days="30">+30 天</button>
+                  <button type="button" class="preset-btn" data-days="90">+90 天</button>
+                  <button type="button" class="preset-btn" data-days="365">+1 年</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Count and Note -->
+            <div style="display:grid; grid-template-columns: 140px 1fr; gap:16px; margin-bottom: 20px;">
+              <div>
+                <label class="form-label" style="display:block; margin-bottom:6px; font-size:0.85rem;">生成数量 (1-500)</label>
+                <input type="number" id="create-count-input" class="input-field" value="10" min="1" max="500" required>
+              </div>
+              <div>
+                <label class="form-label" style="display:block; margin-bottom:6px; font-size:0.85rem;">批次备注 (选填)</label>
+                <input type="text" id="create-note-input" class="input-field" placeholder="例如：2026秋季社群福利、KOL推广" maxlength="50">
+              </div>
+            </div>
+
+            <button type="submit" id="btn-submit-create" class="btn btn-primary glow" style="height:42px; padding:0 24px; font-weight:600;">
+              生成 10 个 × 10,000 ⚡ 兑换码
+            </button>
+          </form>
+        </div>
+
+        <!-- Gift Codes Table Filter & Search -->
+        <div class="filter-row">
+          <div class="filter-pills" id="code-filter-pills">
+            <button class="filter-pill active" data-status="all">全部</button>
+            <button class="filter-pill" data-status="active">未使用</button>
+            <button class="filter-pill" data-status="redeemed">已兑换</button>
+            <button class="filter-pill" data-status="expired">已过期</button>
+            <button class="filter-pill" data-status="revoked">已吊销</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <select id="filter-batch-select" class="input-field" style="width:190px; padding:6px 10px; font-size:0.82rem;">
+              <option value="all">所有批次</option>
+            </select>
+            <button class="btn btn-danger-outline btn-sm" id="btn-revoke-batch" style="display:none;">
+              吊销本批全部未使用
+            </button>
+            <input type="text" id="filter-search-input" class="input-field" placeholder="搜索末4位 / 备注..." style="width:160px; padding:6px 10px; font-size:0.82rem;">
+            <button class="btn btn-outline btn-sm" id="btn-refresh-codes">刷新</button>
+          </div>
+        </div>
+
+        <div class="admin-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 14%;">卡密</th>
+                <th style="width: 12%;">额度</th>
+                <th style="width: 10%;">状态</th>
+                <th style="width: 16%;">有效期截止</th>
+                <th style="width: 18%;">兑换者</th>
+                <th style="width: 18%;">备注 / 时间</th>
+                <th style="width: 12%; text-align:right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="codes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- View 3: Push Notifications -->
+      <div class="admin-content-view" id="view-notifications">
+        <!-- Card 1: Push Notification Form -->
+        <div class="admin-card">
+          <div class="admin-card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <span>推送新消息 / Send Push Notification</span>
+          </div>
+
+          <form id="admin-send-notif-form">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:16px;">
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">推送对象 (Target)</label>
+                <div style="display:flex; gap:16px; align-items:center; height:38px;">
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                    <input type="radio" name="notif-target" value="all" checked> 全员广播 (All)
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                    <input type="radio" name="notif-target" value="user"> 指定用户 (User)
+                  </label>
+                </div>
+              </div>
+
+              <div id="target-user-wrap" style="display:none;">
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">目标用户 (Email 或 User ID)</label>
+                <input type="text" id="notif-target-user" class="input-field" placeholder="user@example.com">
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">提醒级别 (Priority)</label>
+                <div style="display:flex; gap:16px; align-items:center; height:38px;">
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                    <input type="radio" name="notif-priority" value="normal" checked> 普通 (Normal · 蓝紫点)
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+                    <input type="radio" name="notif-priority" value="urgent"> 紧急 (Urgent · 红点抖动)
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">业务分类 (Category)</label>
+                <select id="notif-category" class="filter-select" style="width:100%; height:38px;">
+                  <option value="system">系统公告 (system)</option>
+                  <option value="model">模型相关 (model)</option>
+                  <option value="billing">财务额度 (billing)</option>
+                  <option value="quota">额度告警 (quota)</option>
+                  <option value="task">任务状态 (task)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">中文标题 (Title ZH) *</label>
+                <input type="text" id="notif-title-zh" class="input-field" placeholder="例如：NanoMesh 系统功能升级公告" required>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">英文标题 (Title EN)</label>
+                <input type="text" id="notif-title-en" class="input-field" placeholder="e.g. System Feature Update Announcement">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">中文内容 (Content ZH) *</label>
+                <textarea id="notif-content-zh" class="input-field" style="width:100%; height:72px; resize:vertical; font-size:0.85rem;" placeholder="请输入中文详细通知正文..." required></textarea>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px;">英文内容 (Content EN)</label>
+                <textarea id="notif-content-en" class="input-field" style="width:100%; height:72px; resize:vertical; font-size:0.85rem;" placeholder="Please enter English notice details..."></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.82rem; color:var(--text-secondary);">点击跳转 (Action Route):</label>
+                <select id="notif-action-route" class="filter-select" style="height:34px;">
+                  <option value="none">无跳转 (None)</option>
+                  <option value="models">我的模型 (Settings -> My Models)</option>
+                  <option value="billing">计费与额度 (Settings -> Billing)</option>
+                  <option value="recharge">充值中心 (Recharge Modal)</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary" id="btn-submit-notif" style="padding:8px 24px;">🚀 立即推送</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Card 2: Notification History & Broadcast Management -->
+        <div class="admin-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div class="admin-card-title" style="margin-bottom:0;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>历史推送与广播管理 / Notification Broadcasts</span>
+            </div>
+            <button class="btn btn-outline btn-sm" id="btn-refresh-notifs">刷新</button>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 14%;">推送时间</th>
+                  <th style="width: 12%;">目标对象</th>
+                  <th style="width: 10%;">级别</th>
+                  <th style="width: 18%;">标题</th>
+                  <th style="width: 34%;">内容摘要</th>
+                  <th style="width: 12%; text-align:right;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="notifs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Generated Codes Result (One-time Display) -->
+  <div class="admin-modal-overlay" id="result-modal-overlay">
+    <div class="admin-modal-box">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h3 style="margin:0; font-size:1.15rem; font-weight:600; color:#34d399; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <span id="result-modal-title">兑换码已成功生成</span>
+        </h3>
+      </div>
+      <p style="font-size:0.82rem; color:#f87171; margin:10px 0 0 0;">
+        ⚠️ 数据库仅哈希加密存储卡密，关闭本窗口后<strong>无法再次查看明文</strong>！请务必立即复制或下载保存。
+      </p>
+
+      <div class="codes-result-area" id="result-codes-text"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:20px;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline btn-sm" id="btn-copy-all-codes">复制全部</button>
+          <button class="btn btn-outline btn-sm" id="btn-download-csv">下载 CSV</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-close-result-modal" disabled style="opacity:0.5;">
+          我已保存，关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Confirmation Dialog -->
+  <div class="admin-modal-overlay" id="confirm-modal-overlay">
+    <div class="admin-modal-box" style="max-width:440px;">
+      <h3 style="margin:0 0 10px 0; font-size:1.1rem; font-weight:600;" id="confirm-modal-title">请确认</h3>
+      <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.5; margin-bottom:14px;" id="confirm-modal-body"></p>
+      <div id="confirm-modal-input-wrap" style="display:none; margin-bottom:18px;">
+        <label style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-bottom:6px;" id="confirm-modal-input-label">可选理由</label>
+        <textarea id="confirm-modal-input" class="input-field" style="width:100%; height:64px; resize:vertical; font-size:0.85rem;" placeholder="请输入理由（可选，将通知给模型上传者）..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-outline btn-sm" id="btn-confirm-cancel">取消</button>
+        <button class="btn btn-primary btn-sm" id="btn-confirm-ok">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- XSS Escaping Utility ---
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // --- Format Bytes Utility ---
+    function formatBytes(bytes) {
+      if (!bytes || bytes <= 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // --- Format Local Date Utility ---
+    function formatLocalDate(utcString) {
+      if (!utcString) return '—';
+      try {
+        const d = new Date(utcString.replace(' ', 'T') + 'Z');
+        if (isNaN(d.getTime())) return utcString;
+        return d.toLocaleString(undefined, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (e) {
+        return utcString;
+      }
+    }
+    const formatUtcDate = formatLocalDate;
+
+    // --- Toast Utility ---
+    function showToast(msg, type='error') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      void toast.offsetWidth;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // --- Confirmation Modal Promise Utility ---
+    function showConfirmModal(title, body, okText = '确认', isDanger = false, showInput = false, inputLabel = '操作理由（可选，将通知用户）') {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('confirm-modal-overlay');
+        const titleEl = document.getElementById('confirm-modal-title');
+        const bodyEl = document.getElementById('confirm-modal-body');
+        const okBtn = document.getElementById('btn-confirm-ok');
+        const cancelBtn = document.getElementById('btn-confirm-cancel');
+        const inputWrap = document.getElementById('confirm-modal-input-wrap');
+        const inputEl = document.getElementById('confirm-modal-input');
+        const labelEl = document.getElementById('confirm-modal-input-label');
+
+        titleEl.textContent = title;
+        bodyEl.textContent = body;
+        okBtn.textContent = okText;
+
+        if (showInput) {
+          inputWrap.style.display = 'block';
+          labelEl.textContent = inputLabel;
+          inputEl.value = '';
+        } else {
+          inputWrap.style.display = 'none';
+          inputEl.value = '';
+        }
+
+        if (isDanger) {
+          okBtn.style.background = '#ef4444';
+          okBtn.style.borderColor = '#ef4444';
+          okBtn.style.color = '#fff';
+        } else {
+          okBtn.style.background = '';
+          okBtn.style.borderColor = '';
+          okBtn.style.color = '';
+        }
+
+        overlay.style.display = 'flex';
+
+        function cleanup(confirmed) {
+          overlay.style.display = 'none';
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          resolve({ confirmed, value: inputEl.value.trim() });
+        }
+        function onOk() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+      });
+    }
+
+    // State
+    let currentTab = 'models';
+    let currentModelFilter = 'all';
+    let currentCodeFilter = 'all';
+    let generatedDataForModal = null;
+
+    // Timezone setup
+    const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const tzOffsetMinutes = -new Date().getTimezoneOffset();
+    const tzSign = tzOffsetMinutes >= 0 ? '+' : '-';
+    const tzHours = Math.floor(Math.abs(tzOffsetMinutes) / 60);
+    const tzHintText = `${userTz} (UTC${tzSign}${tzHours})`;
+    document.getElementById('timezone-hint').textContent = tzHintText;
+
+    // Default expiry: 30 days from now at 23:00
+    function setDefaultExpiry(days = 30) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      d.setHours(23, 0, 0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      const val = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`;
+      document.getElementById('create-expiry-input').value = val;
+    }
+    setDefaultExpiry(30);
+
+    // Language Toggle
+    let currentLang = localStorage.getItem('nanomesh-lang') || 'zh';
+    function applyAdminLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('nanomesh-lang', lang);
+      document.getElementById('admin-lang-toggle').textContent = lang === 'zh' ? '中 / EN' : 'EN / 中';
+      const isZh = lang === 'zh';
+      document.getElementById('t-nav-models').textContent = isZh ? '模型审核' : 'Model Review';
+      document.getElementById('t-nav-giftcodes').textContent = isZh ? '兑换码管理' : 'Gift Codes';
+      const notifNav = document.getElementById('t-nav-notifications');
+      if (notifNav) notifNav.textContent = isZh ? '消息推送' : 'Push Notices';
+      document.getElementById('t-logout').textContent = isZh ? '退出' : 'Sign Out';
+      if (currentTab === 'models') {
+        document.getElementById('header-view-title').textContent = isZh ? '模型审核' : 'Model Review';
+      } else if (currentTab === 'gift-codes') {
+        document.getElementById('header-view-title').textContent = isZh ? '兑换码管理' : 'Gift Codes Management';
+      } else {
+        document.getElementById('header-view-title').textContent = isZh ? '消息推送管理' : 'Push Notifications Management';
+      }
+    }
+    applyAdminLang(currentLang);
+    document.getElementById('admin-lang-toggle').addEventListener('click', () => {
+      applyAdminLang(currentLang === 'zh' ? 'en' : 'zh');
+    });
+
+    // Tab Navigation
+    function switchTab(tab) {
+      currentTab = tab;
+      window.location.hash = tab;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.admin-content-view').forEach(el => el.classList.remove('active-view'));
+
+      if (tab === 'models') {
+        document.getElementById('nav-tab-models').classList.add('active');
+        document.getElementById('view-models').classList.add('active-view');
+        loadModels();
+      } else if (tab === 'gift-codes') {
+        document.getElementById('nav-tab-gift-codes').classList.add('active');
+        document.getElementById('view-gift-codes').classList.add('active-view');
+        loadGiftCodes();
+      } else if (tab === 'notifications') {
+        document.getElementById('nav-tab-notifications').classList.add('active');
+        document.getElementById('view-notifications').classList.add('active-view');
+        loadAdminNotifications();
+      }
+      applyAdminLang(currentLang);
+    }
+
+    document.getElementById('nav-tab-models').addEventListener('click', () => switchTab('models'));
+    document.getElementById('nav-tab-gift-codes').addEventListener('click', () => switchTab('gift-codes'));
+    document.getElementById('nav-tab-notifications').addEventListener('click', () => switchTab('notifications'));
+
+    // Check hash on load
+    if (window.location.hash === '#gift-codes') {
+      currentTab = 'gift-codes';
+    } else if (window.location.hash === '#notifications') {
+      currentTab = 'notifications';
+    }
+
+    // ----------------- Model Approvals -----------------
+    async function loadModels() {
+      try {
+        const res = await fetch(`/api/admin/models?status=${encodeURIComponent(currentModelFilter)}`);
+        if (res.status === 401) {
+          document.getElementById('login-section').style.display = 'flex';
+          document.getElementById('admin-section').style.display = 'none';
+          return;
+        }
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('admin-section').style.display = 'flex';
+
+        const data = await res.json();
+        const models = data.models || [];
+        document.getElementById('sidebar-pending-badge').textContent = data.pendingCount || 0;
+
+        let html = '';
+        if (models.length === 0) {
+          html = `<tr><td colspan="5" style="text-align:center; padding:3rem; color:var(--text-secondary);">暂无相关模型</td></tr>`;
+        } else {
+          models.forEach(m => {
+            const sizeStr = formatBytes(m.file_size);
+            const dateStr = formatLocalDate(m.created_at);
+            const statusClass = 'badge-' + (m.status || 'pending');
+            const displayStatus = (m.status || '').toUpperCase();
+
+            let actions = `<button class="btn btn-outline btn-sm" onclick="downloadFile('${escapeHtml(m.upload_id)}')"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 下载</button>`;
+
+            if (m.status === 'pending') {
+              actions += ` <button class="btn btn-primary btn-sm" onclick="confirmUpdateModel('${escapeHtml(m.upload_id)}', 'approved')">通过</button>`;
+              actions += ` <button class="btn btn-danger-outline btn-sm" onclick="confirmUpdateModel('${escapeHtml(m.upload_id)}', 'rejected', true)">拒绝</button>`;
+            } else if (m.status === 'approved') {
+              actions += ` <button class="btn btn-primary btn-sm" style="background:#10b981; border-color:#10b981; color:#fff;" onclick="confirmUpdateModel('${escapeHtml(m.upload_id)}', 'published')">上线网络</button>`;
+            } else if (m.status === 'published') {
+              actions += ` <button class="btn btn-danger-outline btn-sm" onclick="confirmUpdateModel('${escapeHtml(m.upload_id)}', 'approved', true, true)">下线</button>`;
+            }
+
+            html += `<tr>
+              <td>
+                <div style="font-weight:600;">${escapeHtml(m.username || 'Unknown')}</div>
+                <span class="admin-meta-text">${escapeHtml(m.email || '—')}</span>
+              </td>
+              <td>
+                <div style="font-weight:600;">${escapeHtml(m.display_name)}</div>
+                <span class="admin-meta-text">${escapeHtml(m.param_scale || '—')} · Context: ${escapeHtml(m.context_window || '4k')}</span>
+              </td>
+              <td>
+                <div style="font-family:'JetBrains Mono', monospace; font-size:0.83rem;">${escapeHtml(m.file_name || '—')}</div>
+                <span class="admin-meta-text">${sizeStr} · ${dateStr}</span>
+              </td>
+              <td><span class="badge-pill ${statusClass}">${displayStatus}</span></td>
+              <td style="text-align:right;"><div class="action-buttons-wrap">${actions}</div></td>
+            </tr>`;
+          });
+        }
+        document.getElementById('models-tbody').innerHTML = html;
+      } catch (err) {
+        showToast('加载模型失败: ' + err.message);
+      }
+    }
+
+    window.confirmUpdateModel = async function(id, status, isDanger = false, isDelist = false) {
+      let actionName = '更新';
+      let showInput = false;
+      let inputLabel = '';
+
+      if (status === 'approved' && isDelist) {
+        actionName = '下线模型';
+        showInput = true;
+        inputLabel = '下线理由（可选，将通知给模型上传者）';
+      } else if (status === 'approved') {
+        actionName = '审核通过';
+      } else if (status === 'rejected') {
+        actionName = '驳回拒绝';
+        showInput = true;
+        inputLabel = '驳回理由（可选，将通知给模型上传者）';
+      } else if (status === 'published') {
+        actionName = '正式上线至全网调度系统';
+      }
+
+      const res = await showConfirmModal('确认操作', `确定要将该模型状态变更为「${actionName}」吗？`, '确定', isDanger, showInput, inputLabel);
+      if (!res || !res.confirmed) return;
+
+      try {
+        const fetchRes = await fetch(`/api/admin/models/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, reason: res.value })
+        });
+        if (!fetchRes.ok) {
+          const errData = await fetchRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Update failed');
+        }
+        showToast(`操作成功: 已变更状态为 ${status}`, 'success');
+        loadModels();
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+
+    window.downloadFile = async function(id) {
+      try {
+        const res = await fetch(`/api/admin/models/${id}/download`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || '下载链接生成失败');
+        }
+        const data = await res.json();
+        if (data.url) {
+          showToast('正在调取 R2 安全预签名下载...', 'success');
+          window.location.href = data.url;
+        }
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+
+    // Filter pills for models
+    document.querySelectorAll('#model-filter-pills .filter-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#model-filter-pills .filter-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentModelFilter = btn.dataset.status;
+        loadModels();
+      });
+    });
+    document.getElementById('btn-refresh-models').addEventListener('click', loadModels);
+
+    // ----------------- Gift Codes Console -----------------
+    async function loadGiftCodes() {
+      try {
+        const batchVal = document.getElementById('filter-batch-select').value;
+        const qVal = document.getElementById('filter-search-input').value.trim();
+
+        const params = new URLSearchParams({
+          status: currentCodeFilter,
+          batch: batchVal,
+          q: qVal
+        });
+
+        const res = await fetch(`/api/admin/gift-codes?${params.toString()}`);
+        if (res.status === 401) {
+          document.getElementById('login-section').style.display = 'flex';
+          document.getElementById('admin-section').style.display = 'none';
+          return;
+        }
+
+        const data = await res.json();
+        
+        // Update Stats
+        const s = data.stats || {};
+        document.getElementById('stat-active-count').textContent = s.active || 0;
+        document.getElementById('stat-active-credits').textContent = (s.activeCredits || 0).toLocaleString() + ' ⚡';
+        document.getElementById('stat-redeemed-count').textContent = s.redeemed || 0;
+        document.getElementById('stat-revoked-count').textContent = s.revoked || 0;
+
+        // Populate Batch Dropdown
+        const batchSelect = document.getElementById('filter-batch-select');
+        const prevVal = batchSelect.value;
+        let batchOpts = '<option value="all">所有批次 (All Batches)</option>';
+        (data.batches || []).forEach(b => {
+          const shortId = b.batch_id.slice(0, 8);
+          const noteText = b.note ? ` (${escapeHtml(b.note)})` : '';
+          batchOpts += `<option value="${escapeHtml(b.batch_id)}">${shortId}${noteText} · ${b.code_count}个</option>`;
+        });
+        batchSelect.innerHTML = batchOpts;
+        batchSelect.value = prevVal;
+
+        // Batch revoke button visibility
+        const revokeBatchBtn = document.getElementById('btn-revoke-batch');
+        if (batchSelect.value !== 'all') {
+          revokeBatchBtn.style.display = 'inline-flex';
+        } else {
+          revokeBatchBtn.style.display = 'none';
+        }
+
+        // Render Table
+        const items = data.items || [];
+        let html = '';
+        if (items.length === 0) {
+          html = `<tr><td colspan="7" style="text-align:center; padding:3rem; color:var(--text-secondary);">暂无相关兑换码</td></tr>`;
+        } else {
+          items.forEach(c => {
+            const hint = `****-${escapeHtml(c.code_hint)}`;
+            const amtStr = Number(c.amount).toLocaleString() + ' ⚡';
+            const expStr = c.expires_at ? formatLocalDate(c.expires_at) : '永不过期';
+            const dateStr = formatLocalDate(c.created_at);
+
+            let statusPill = '';
+            if (c.computed_status === 'active') statusPill = '<span class="badge-pill badge-active">未使用</span>';
+            else if (c.computed_status === 'redeemed') statusPill = '<span class="badge-pill badge-redeemed">已兑换</span>';
+            else if (c.computed_status === 'expired') statusPill = '<span class="badge-pill badge-expired">已过期</span>';
+            else statusPill = '<span class="badge-pill badge-revoked">已吊销</span>';
+
+            let userStr = '—';
+            if (c.redeemed_username || c.redeemed_email) {
+              userStr = `<div style="font-weight:600;">${escapeHtml(c.redeemed_username || 'Unknown')}</div>
+                         <span class="admin-meta-text">${escapeHtml(c.redeemed_email || '')}</span>`;
+            }
+
+            let timeStr = dateStr;
+            if (c.redeemed_at) {
+              timeStr = `<span style="color:#60a5fa;">兑换: ${formatLocalDate(c.redeemed_at)}</span>`;
+            } else if (c.revoked_at) {
+              timeStr = `<span style="color:#a1a1aa;">吊销: ${formatLocalDate(c.revoked_at)}</span>`;
+            }
+
+            let actions = '';
+            if (c.computed_status === 'active') {
+              actions = `<button class="btn btn-danger-outline btn-sm" onclick="revokeSingleCode('${escapeHtml(c.code_id)}', '${escapeHtml(c.code_hint)}', ${c.amount})">吊销</button>`;
+            } else {
+              actions = `<button class="btn btn-outline btn-sm" style="opacity:0.4; cursor:not-allowed;" disabled>已失效</button>`;
+            }
+
+            html += `<tr>
+              <td><span style="font-family:'JetBrains Mono', monospace; font-weight:600;">${hint}</span></td>
+              <td><span style="font-weight:600; color:#818cf8;">${amtStr}</span></td>
+              <td>${statusPill}</td>
+              <td><span style="font-size:0.83rem;">${expStr}</span></td>
+              <td>${userStr}</td>
+              <td>
+                <div style="font-size:0.82rem;">${escapeHtml(c.note || '—')}</div>
+                <span class="admin-meta-text">${timeStr}</span>
+              </td>
+              <td style="text-align:right;"><div class="action-buttons-wrap">${actions}</div></td>
+            </tr>`;
+          });
+        }
+        document.getElementById('codes-tbody').innerHTML = html;
+      } catch (err) {
+        showToast('加载兑换码失败: ' + err.message);
+      }
+    }
+
+    // Filter pills for codes
+    document.querySelectorAll('#code-filter-pills .filter-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#code-filter-pills .filter-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCodeFilter = btn.dataset.status;
+        loadGiftCodes();
+      });
+    });
+
+    document.getElementById('filter-batch-select').addEventListener('change', () => {
+      loadGiftCodes();
+    });
+
+    let searchTimer = null;
+    document.getElementById('filter-search-input').addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(loadGiftCodes, 300);
+    });
+    document.getElementById('btn-refresh-codes').addEventListener('click', loadGiftCodes);
+
+    // Amount presets
+    document.querySelectorAll('#amount-presets .preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#amount-presets .preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('create-amount-input').value = btn.dataset.amt;
+        updateCreateBtnText();
+      });
+    });
+
+    document.getElementById('create-amount-input').addEventListener('input', () => {
+      document.querySelectorAll('#amount-presets .preset-btn').forEach(b => b.classList.remove('active'));
+      updateCreateBtnText();
+    });
+
+    document.getElementById('create-count-input').addEventListener('input', updateCreateBtnText);
+
+    function updateCreateBtnText() {
+      const cnt = document.getElementById('create-count-input').value || 1;
+      const amt = Number(document.getElementById('create-amount-input').value || 0).toLocaleString();
+      document.getElementById('btn-submit-create').textContent = `生成 ${cnt} 个 × ${amt} ⚡ 兑换码`;
+    }
+
+    // Expiry radio toggle
+    document.querySelectorAll('input[name="expiry-type"]').forEach(r => {
+      r.addEventListener('change', (e) => {
+        const pickerBox = document.getElementById('expiry-time-picker-box');
+        if (e.target.value === 'never') {
+          pickerBox.style.opacity = '0.35';
+          pickerBox.style.pointerEvents = 'none';
+        } else {
+          pickerBox.style.opacity = '1';
+          pickerBox.style.pointerEvents = 'auto';
+        }
+      });
+    });
+
+    // Quick add days
+    document.querySelectorAll('#expiry-quick-buttons .preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setDefaultExpiry(parseInt(btn.dataset.days));
+      });
+    });
+
+    // Revoke Single Code
+    window.revokeSingleCode = async function(id, hint, amount) {
+      const ok = await showConfirmModal(
+        '确认吊销兑换码',
+        `确定要吊销卡密 ****-${hint} (${Number(amount).toLocaleString()} ⚡) 吗？吊销后该码立即失效，且不可恢复。`,
+        '确认吊销',
+        true
+      );
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/admin/gift-codes/${id}/revoke`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Revoke failed');
+        showToast('已成功吊销卡密', 'success');
+        loadGiftCodes();
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+
+    // Revoke Entire Batch
+    document.getElementById('btn-revoke-batch').addEventListener('click', async () => {
+      const batchSelect = document.getElementById('filter-batch-select');
+      const batchId = batchSelect.value;
+      if (batchId === 'all') return;
+
+      const res = await showConfirmModal(
+        '批量吊销卡密',
+        `确定要一键吊销批次 [${batchId.slice(0, 8)}] 下所有未使用的兑换码吗？已兑换的码不受影响，已吊销的码不可恢复！`,
+        '全部吊销',
+        true
+      );
+      if (!res || !res.confirmed) return;
+
+      try {
+        const res = await fetch('/api/admin/gift-codes/revoke-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ batch_id: batchId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Batch revoke failed');
+        showToast(`已成功吊销该批次下 ${data.revokedCount} 个卡密`, 'success');
+        loadGiftCodes();
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    // Create Gift Codes Submit
+    document.getElementById('create-gift-codes-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-create');
+      btn.disabled = true;
+      btn.textContent = '正在批量计算并哈希入库...';
+
+      const amount = Number(document.getElementById('create-amount-input').value);
+      const count = Number(document.getElementById('create-count-input').value);
+      const note = document.getElementById('create-note-input').value.trim();
+
+      const expiryType = document.querySelector('input[name="expiry-type"]:checked').value;
+      let expires_at = null;
+      if (expiryType === 'expire') {
+        const rawLocal = document.getElementById('create-expiry-input').value;
+        if (!rawLocal) {
+          showToast('请选择有效期截止时间');
+          btn.disabled = false;
+          updateCreateBtnText();
+          return;
+        }
+        // Send as ISO string with user's local timezone offset converted to UTC
+        expires_at = new Date(rawLocal).toISOString();
+      }
+
+      try {
+        const res = await fetch('/api/admin/gift-codes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, count, expires_at, note })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+        // Show Results Modal
+        generatedDataForModal = data;
+        document.getElementById('result-modal-title').textContent = `成功生成 ${data.count} 个兑换码 (${Number(data.amount).toLocaleString()} ⚡)`;
+        document.getElementById('result-codes-text').textContent = data.codes.join('\n');
+        
+        // Disable Close until user copies or downloads
+        const closeBtn = document.getElementById('btn-close-result-modal');
+        closeBtn.disabled = true;
+        closeBtn.style.opacity = '0.5';
+
+        document.getElementById('result-modal-overlay').style.display = 'flex';
+        loadGiftCodes();
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btn.disabled = false;
+        updateCreateBtnText();
+      }
+    });
+
+    // Result Modal Copy & Download Handlers
+    document.getElementById('btn-copy-all-codes').addEventListener('click', () => {
+      if (!generatedDataForModal || !generatedDataForModal.codes) return;
+      navigator.clipboard.writeText(generatedDataForModal.codes.join('\n'));
+      showToast('所有卡密明文已复制到剪贴板', 'success');
+      const closeBtn = document.getElementById('btn-close-result-modal');
+      closeBtn.disabled = false;
+      closeBtn.style.opacity = '1';
+    });
+
+    document.getElementById('btn-download-csv').addEventListener('click', () => {
+      if (!generatedDataForModal || !generatedDataForModal.codes) return;
+      const d = generatedDataForModal;
+      let csv = 'Code,Amount,Expires_At,Batch_ID,Note\r\n';
+      d.codes.forEach(c => {
+        csv += `"${c}",${d.amount},"${d.expires_at || 'Never'}","${d.batch_id}","${escapeHtml(d.note || '')}"\r\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gift_codes_${d.batch_id.slice(0, 8)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV 文件已开始下载', 'success');
+      const closeBtn = document.getElementById('btn-close-result-modal');
+      closeBtn.disabled = false;
+      closeBtn.style.opacity = '1';
+    });
+
+    document.getElementById('btn-close-result-modal').addEventListener('click', () => {
+      document.getElementById('result-modal-overlay').style.display = 'none';
+      generatedDataForModal = null;
+    });
+
+    // ----------------- Admin Auth -----------------
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const pwd = document.getElementById('admin-password').value;
+      if (!pwd) {
+        showToast('请输入管理员密码');
+        return;
+      }
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = '验证中...';
+      
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showToast('登录成功', 'success');
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('admin-section').style.display = 'flex';
+          switchTab(currentTab);
+        } else {
+          showToast(data.error || '密码错误', 'error');
+        }
+      } catch (err) {
+        showToast('网络请求错误');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Authenticate';
+      }
+    });
+
+    document.getElementById('admin-password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      document.getElementById('login-section').style.display = 'flex';
+      document.getElementById('admin-section').style.display = 'none';
+      document.getElementById('admin-password').value = '';
+    });
+
+
+    // ----------------- Notification Console -----------------
+    // Radio toggle target user field
+    document.querySelectorAll('input[name="notif-target"]').forEach(r => {
+      r.addEventListener('change', (e) => {
+        document.getElementById('target-user-wrap').style.display = e.target.value === 'user' ? 'block' : 'none';
+      });
+    });
+
+    async function loadAdminNotifications() {
+      try {
+        const res = await fetch('/api/admin/notifications');
+        if (res.status === 401) {
+          document.getElementById('login-section').style.display = 'flex';
+          document.getElementById('admin-section').style.display = 'none';
+          return;
+        }
+        const data = await res.json();
+        const items = data.items || [];
+        let html = '';
+        if (items.length === 0) {
+          html = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--text-secondary);">暂无推送历史 (No notification history)</td></tr>';
+        } else {
+          items.forEach(n => {
+            const isAll = !n.user_id;
+            const targetBadge = isAll 
+              ? '<span class="badge-pill badge-approved">全员广播</span>'
+              : `<span class="badge-pill" style="background:rgba(99,102,241,0.15); color:#818cf8;">${escapeHtml(n.target_email || n.user_id.slice(0,8))}</span>`;
+            
+            const priorityBadge = n.priority === 'urgent'
+              ? '<span class="badge-pill badge-rejected">紧急</span>'
+              : '<span class="badge-pill" style="background:rgba(255,255,255,0.06); color:#cbd5e1;">普通</span>';
+
+            const timeStr = formatLocalDate(n.created_at);
+            const titleDisplay = escapeHtml(n.title_zh) + (n.title_en ? ` <span style="color:var(--text-secondary); font-size:0.75rem;">(${escapeHtml(n.title_en)})</span>` : '');
+
+            html += `<tr>
+              <td style="font-family:'JetBrains Mono',monospace; font-size:0.82rem;">${timeStr}</td>
+              <td>${targetBadge}</td>
+              <td>${priorityBadge}</td>
+              <td style="font-weight:500;">${titleDisplay}</td>
+              <td style="font-size:0.82rem; color:var(--text-secondary); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(n.content_zh)}">${escapeHtml(n.content_zh)}</td>
+              <td style="text-align:right;">
+                <button class="btn btn-danger-outline btn-sm" onclick="revokeNotification('${escapeHtml(n.notification_id)}')">撤回</button>
+              </td>
+            </tr>`;
+          });
+        }
+        document.getElementById('notifs-tbody').innerHTML = html;
+      } catch (err) {
+        showToast('加载推送历史失败: ' + err.message);
+      }
+    }
+
+    document.getElementById('btn-refresh-notifs').addEventListener('click', loadAdminNotifications);
+
+    window.revokeNotification = async function(id) {
+      const res = await showConfirmModal('确认撤回', '确定要撤回该推送消息吗？撤回后所有用户的消息列表中将不再显示该内容。', '撤回', true);
+      if (!res || !res.confirmed) return;
+
+      try {
+        const fetchRes = await fetch(`/api/admin/notifications/${id}`, { method: 'DELETE' });
+        if (!fetchRes.ok) throw new Error('Revoke failed');
+        showToast('消息已成功撤回', 'success');
+        loadAdminNotifications();
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+
+    document.getElementById('admin-send-notif-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-notif');
+      btn.disabled = true;
+      btn.textContent = '正在发送...';
+
+      const target = document.querySelector('input[name="notif-target"]:checked').value;
+      const targetUser = document.getElementById('notif-target-user').value.trim();
+      const priority = document.querySelector('input[name="notif-priority"]:checked').value;
+      const category = document.getElementById('notif-category').value;
+      const titleZh = document.getElementById('notif-title-zh').value.trim();
+      const titleEn = document.getElementById('notif-title-en').value.trim();
+      const contentZh = document.getElementById('notif-content-zh').value.trim();
+      const contentEn = document.getElementById('notif-content-en').value.trim();
+      const actionRoute = document.getElementById('notif-action-route').value;
+
+      let actionType = 'none';
+      let actionPayload = undefined;
+      if (actionRoute === 'models') {
+        actionType = 'route';
+        actionPayload = JSON.stringify({ modal: 'settings', tab: 'models' });
+      } else if (actionRoute === 'billing') {
+        actionType = 'route';
+        actionPayload = JSON.stringify({ modal: 'settings', tab: 'billing' });
+      } else if (actionRoute === 'recharge') {
+        actionType = 'route';
+        actionPayload = JSON.stringify({ modal: 'recharge' });
+      }
+
+      try {
+        const res = await fetch('/api/admin/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target,
+            targetUser: target === 'user' ? targetUser : undefined,
+            priority,
+            category,
+            titleZh,
+            titleEn,
+            contentZh,
+            contentEn,
+            actionType,
+            actionPayload
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send notification');
+
+        showToast('消息推送成功！', 'success');
+        document.getElementById('admin-send-notif-form').reset();
+        document.getElementById('target-user-wrap').style.display = 'none';
+        loadAdminNotifications();
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 立即推送';
+      }
+    });
+
+    // Initial load
+    switchTab(currentTab);
+  </script>
+</body>
+</html>

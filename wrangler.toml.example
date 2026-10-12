@@ -1,0 +1,49 @@
+# ==============================================================================
+# NanoMesh Frontend & Gateway Wrangler Configuration Example
+# ==============================================================================
+# 1. Copy this file to `wrangler.toml`:
+#    cp wrangler.toml.example wrangler.toml
+# 2. Create your Cloudflare resources:
+#    - D1 Database: wrangler d1 create nanomesh-db
+#    - R2 Bucket:   wrangler r2 bucket create nanomesh-assets
+# 3. Replace `database_id` below with your newly generated D1 Database ID.
+# 4. Apply database migrations:
+#    npx wrangler d1 migrations apply nanomesh-db --remote
+# 5. Set your secrets:
+#    wrangler secret put JWT_SECRET
+#    wrangler secret put TURNSTILE_SECRET_KEY
+#    wrangler secret put RESEND_API_KEY
+#    wrangler secret put ADMIN_PASSWORD
+#    wrangler secret put Cloudflare_Account_ID
+#    wrangler secret put R2_ACCESS_KEY_ID
+#    wrangler secret put R2_SECRET_ACCESS_KEY
+# 6. Deploy:
+#    npm run deploy
+# ==============================================================================
+
+name = "nanomesh-frontend"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nanomesh-db"
+database_id = "your-d1-database-uuid-here"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "nanomesh-assets"
+
+[vars]
+TURNSTILE_SITE_KEY = "your-turnstile-site-key-here"
+RESEND_FROM_EMAIL = "noreply@yourdomain.com"
+BACKEND_URL = "https://ai.yourdomain.com"
+FRONTEND_URL = "https://nano.yourdomain.com"
