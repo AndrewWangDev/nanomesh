@@ -16,6 +16,15 @@ function generateCrockfordCode(): { raw: string; formatted: string } {
   return { raw: chars, formatted };
 }
 
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+}
+
 export async function getAdminSession(request: Request, env: Env) {
   const cookie = request.headers.get("Cookie") || "";
   const match = cookie.match(/admin_session=([^;]+)/);
@@ -56,7 +65,7 @@ export async function handleAdminLogin(request: Request, env: Env): Promise<Resp
   const enc = new TextEncoder();
   const inputBuffer = enc.encode(body.password || "");
   const passBuffer = enc.encode(adminPass);
-  const isMatch = inputBuffer.length === passBuffer.length && crypto.subtle.timingSafeEqual(inputBuffer, passBuffer);
+  const isMatch = timingSafeEqual(inputBuffer, passBuffer);
 
   if (!isMatch) {
     await env.DB.prepare("INSERT INTO admin_login_attempts (ip) VALUES (?)").bind(ip).run();
@@ -140,7 +149,8 @@ export async function handleAdminDownload(request: Request, env: Env): Promise<R
     service: "s3",
     region: "auto"
   });
-  const objectUrl = new URL(`https://${env.Cloudflare_Account_ID}.r2.cloudflarestorage.com/nanomesh-assets/${model.r2_object_key}`);
+  const bucket = (env as any).R2_BUCKET_NAME || "nanomesh-assets";
+  const objectUrl = new URL(`https://${env.Cloudflare_Account_ID}.r2.cloudflarestorage.com/${bucket}/${model.r2_object_key}`);
   objectUrl.searchParams.set("X-Amz-Expires", "3600");
   const req = await aws.sign(objectUrl, {
     method: "GET",

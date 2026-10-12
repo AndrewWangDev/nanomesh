@@ -100,6 +100,10 @@ export async function handleGoogleCallback(code: string, state: string, env: Env
   });
   const userData: any = await userRes.json();
   
+  if (!userData.verified_email) {
+    throw new Error("Google account has no verified email address");
+  }
+  
   return {
     id: userData.id,
     email: userData.email,

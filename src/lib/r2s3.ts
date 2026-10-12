@@ -11,7 +11,8 @@ function getClient(env: Env) {
 }
 
 function getEndpoint(env: Env) {
-  return `https://${env.Cloudflare_Account_ID}.r2.cloudflarestorage.com/nanomesh-assets`;
+  const bucket = (env as any).R2_BUCKET_NAME || 'nanomesh-assets';
+  return `https://${env.Cloudflare_Account_ID}.r2.cloudflarestorage.com/${bucket}`;
 }
 
 export async function createMultipartUpload(env: Env, objectKey: string, contentType: string = 'application/octet-stream'): Promise<string> {
