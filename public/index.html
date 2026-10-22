@@ -2,8 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NanoMesh Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NanoMesh | Distributed AI & Micro-Model Orchestration</title>
+  <meta name="description" content="Adaptive edge AI gateway and heterogeneous micro-model infrastructure. Dynamically orchestrates workloads across client WebGPU, Edge AI, and LLMs.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://nano.andrewwangdev.com/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nano.andrewwangdev.com/">
+  <meta property="og:title" content="NanoMesh | Distributed AI & Micro-Model Orchestration">
+  <meta property="og:description" content="Adaptive edge AI gateway and heterogeneous micro-model infrastructure. Dynamically orchestrates workloads across client WebGPU, Edge AI, and LLMs.">
+  <meta property="og:image" content="https://cdn.andrewwangdev.com/img/EN_Picture_MainPage.webp">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://nano.andrewwangdev.com/">
+  <meta name="twitter:title" content="NanoMesh | Distributed AI & Micro-Model Orchestration">
+  <meta name="twitter:description" content="Adaptive edge AI gateway and heterogeneous micro-model infrastructure. Dynamically orchestrates workloads across client WebGPU, Edge AI, and LLMs.">
+  <meta name="twitter:image" content="https://cdn.andrewwangdev.com/img/EN_Picture_MainPage.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,10 +29,11 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <link rel="icon" href="/favicon.ico?v=74" type="image/x-icon">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" href="/favicon.ico?v=20261022" sizes="any">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20261022">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20261022">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20261022">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261022">
   <link rel="manifest" href="/site.webmanifest">
 </head>
 <body class="chat-body">
@@ -181,6 +199,10 @@
 
   <!-- Mobile Tab Switcher (Visible on < 1024px when active) -->
   <div class="mobile-tab-switcher" id="mobile-tab-switcher" style="display:none;">
+    <button class="mobile-back-to-home-btn" id="mobile-back-to-home-btn" title="返回工作台" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      <span data-i18n="console.back">返回</span>
+    </button>
     <button class="mobile-tab-btn active" id="tab-btn-canvas">
       <span>📐 DAG 拓扑网格</span>
       <span class="tab-badge" id="tab-dag-badge" style="display:none;">0/0</span>

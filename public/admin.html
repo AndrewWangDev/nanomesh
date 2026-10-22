@@ -2,12 +2,18 @@
 <html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>NanoMesh Admin Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css?v=1791272211582">
+  <link rel="icon" href="/favicon.ico?v=20261022" sizes="any">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20261022">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20261022">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20261022">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261022">
+  <link rel="manifest" href="/site.webmanifest">
   <style>
     :root {
       --text-primary: #f8fafc;
@@ -498,6 +504,86 @@
       margin: 16px 0;
       user-select: text;
     }
+
+    /* Mobile & Tablet Responsive Engine */
+    .admin-mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 6px;
+      margin-right: 6px;
+      border-radius: 6px;
+    }
+    .admin-mobile-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .admin-sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 19;
+    }
+    @media (max-width: 1024px) {
+      .admin-mobile-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 25;
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+      }
+      .admin-sidebar.sidebar-open {
+        transform: translateX(0);
+      }
+      .admin-sidebar.sidebar-open ~ .admin-sidebar-backdrop {
+        display: block;
+      }
+      .admin-header {
+        padding: 0 16px;
+      }
+      .admin-content-view {
+        padding: 20px 16px;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .filter-pills {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .admin-header-title {
+        font-size: 0.95rem;
+      }
+      .admin-table-container {
+        -webkit-overflow-scrolling: touch;
+      }
+    }
   </style>
 </head>
 <body>
@@ -554,12 +640,16 @@
         </div>
       </div>
     </div>
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop"></div>
 
     <!-- Main Body Area -->
     <div class="admin-main">
       <!-- Header -->
       <div class="admin-header">
         <div class="admin-header-title">
+          <button class="admin-mobile-toggle" id="admin-sidebar-toggle" aria-label="Toggle Menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
           <span id="header-view-title">模型审核</span>
         </div>
         <div class="admin-header-actions">
@@ -1707,6 +1797,28 @@
         btn.disabled = false;
         btn.textContent = '🚀 立即推送';
       }
+    });
+
+    // Mobile sidebar toggle & backdrop dismissal
+    const sidebarToggle = document.getElementById('admin-sidebar-toggle');
+    const sidebarEl = document.querySelector('.admin-sidebar');
+    const sidebarBackdrop = document.getElementById('admin-sidebar-backdrop');
+    if (sidebarToggle && sidebarEl) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebarEl.classList.toggle('sidebar-open');
+      });
+    }
+    if (sidebarBackdrop && sidebarEl) {
+      sidebarBackdrop.addEventListener('click', () => {
+        sidebarEl.classList.remove('sidebar-open');
+      });
+    }
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 1024 && sidebarEl) {
+          sidebarEl.classList.remove('sidebar-open');
+        }
+      });
     });
 
     // Initial load

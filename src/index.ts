@@ -200,12 +200,18 @@ export default {
         // Guests are allowed on the index page, no redirect
       }
 
-      if (url.pathname === "/terms" || url.pathname === "/terms/") {
-        return env.ASSETS.fetch(new Request(new URL("/terms.html", request.url)));
+      if (url.pathname === "/terms" || url.pathname === "/terms/" || url.pathname === "/terms.html") {
+        const assetRes = await env.ASSETS.fetch(new Request(new URL("/terms.html", request.url)));
+        const res = new Response(assetRes.body, assetRes);
+        res.headers.set("X-Robots-Tag", "noindex, follow");
+        return res;
       }
 
-      if (url.pathname === "/privacy" || url.pathname === "/privacy/") {
-        return env.ASSETS.fetch(new Request(new URL("/privacy.html", request.url)));
+      if (url.pathname === "/privacy" || url.pathname === "/privacy/" || url.pathname === "/privacy.html") {
+        const assetRes = await env.ASSETS.fetch(new Request(new URL("/privacy.html", request.url)));
+        const res = new Response(assetRes.body, assetRes);
+        res.headers.set("X-Robots-Tag", "noindex, follow");
+        return res;
       }
       
       // Serve R2 Storage (strictly restricted to public avatars)

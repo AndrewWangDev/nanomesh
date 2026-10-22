@@ -1162,33 +1162,105 @@ button.top-pill {
 
 /* Breakpoints */
 @media (max-width: 768px) {
-  body { overflow-x: hidden; }
+  body { 
+    overflow-x: hidden; 
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .hide-on-mobile { display: none !important; }
-  .header { padding: 0.5rem 0.5rem; gap: 0.25rem; }
-  .header-left { gap: 0.25rem; font-size: 0.95rem; }
-  .header-left > span { display: inline; font-size: 0.95rem; font-weight: 600; margin-left: 2px; } /* Restore NanoMesh text */
-  .mesh-logo { width: 22px; height: 22px; font-size: 1.15rem !important; }
-  .header-right { gap: 0.25rem; }
+  .header { 
+    padding: 0.5rem 0.75rem; 
+    gap: 0.35rem; 
+  }
+  .header-left { 
+    gap: 0.35rem; 
+    font-size: 0.95rem; 
+    flex-shrink: 0;
+  }
+  .header-left > span { display: inline; font-size: 0.95rem; font-weight: 600; margin-left: 2px; }
+  .mesh-logo { width: 24px; height: 24px; font-size: 1.2rem !important; }
+  .header-right { 
+    gap: 0.35rem; 
+    margin-left: auto;
+  }
+  
+  /* Header buttons clean sizing */
   .top-pill, .badge { 
-    padding: 0 6px; 
-    font-size: 0.7rem; 
+    padding: 0 8px; 
+    font-size: 0.75rem; 
     white-space: nowrap; 
-    height: 28px; 
+    height: 32px; 
     display: inline-flex; 
     align-items: center; 
     justify-content: center; 
   }
-  .avatar { width: 28px; height: 28px; }
+  .avatar { 
+    width: 32px; 
+    height: 32px; 
+  }
   
   .chat-container { max-width: 100%; width: 100vw; overflow-x: hidden; }
-  .chat-area { padding: 1rem 0.5rem; justify-content: flex-start; }
-  .welcome-msg { margin-top: auto; margin-bottom: 2.5rem !important; }
-  .welcome-msg div:first-child { font-size: 1.25rem; line-height: 1.3; padding: 0 0.5rem; }
-  .welcome-subtitle { font-size: 0.75rem; padding: 0 1rem; margin-top: 0.5rem; line-height: 1.4; word-break: break-word; white-space: normal; }
-  .suggested-prompts { margin-bottom: 1.5rem !important; width: 100%; padding: 0 0.75rem; flex-direction: column; flex-wrap: nowrap; gap: 10px; }
-  .prompt-card { flex: 0 0 auto; width: 100%; min-width: 0; padding: 12px 14px; text-align: center; }
-  .input-area-wrapper { padding: 0.5rem 0.75rem 1.25rem; gap: 0.35rem; }
-  .chat-disclaimer { font-size: 0.68rem; padding: 0 0.5rem; }
+  .chat-area { padding: 1rem 0.75rem; justify-content: flex-start; }
+  .welcome-msg { margin-top: auto; margin-bottom: 1.5rem !important; }
+  .welcome-msg div:first-child { font-size: 1.35rem; line-height: 1.3; padding: 0 0.5rem; }
+  .welcome-subtitle { font-size: 0.8rem; padding: 0 0.75rem; margin-top: 0.5rem; line-height: 1.4; word-break: break-word; white-space: normal; }
+  
+  .suggested-prompts { margin-bottom: 1.25rem !important; width: 100%; padding: 0 0.5rem; flex-direction: column; flex-wrap: nowrap; gap: 8px; }
+  .prompt-card { 
+    flex: 0 0 auto; 
+    width: 100%; 
+    min-width: 0; 
+    padding: 10px 14px; 
+    text-align: left;
+  }
+  .prompt-card-icon { font-size: 1.2rem; }
+  .prompt-card-title { font-size: 0.85rem; }
+  .prompt-card-desc { font-size: 0.75rem; line-height: 1.35; }
+  
+  .input-area-wrapper { 
+    padding: 0.5rem 0.75rem calc(1rem + env(safe-area-inset-bottom, 0px)); 
+    gap: 0.35rem; 
+  }
+  .chat-disclaimer { font-size: 0.7rem; padding: 0 0.5rem; }
+  
+  /* iOS 16px Auto-Zoom Prevention */
+  .chat-input,
+  .input-field,
+  .inspector-prompt,
+  .inspector-select,
+  .custom-select {
+    font-size: 16px !important;
+  }
+  
+  /* DAG Canvas Mobile Adaptation: Prevent negative scroll overflow */
+  .dag-canvas-container {
+    padding: 60px 20px 20px 20px !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    overscroll-behavior: contain;
+  }
+  .dag-nodes-container {
+    margin: auto 0 !important;
+  }
+
+  /* Node Inspector as Mobile Native Bottom Sheet */
+  .node-inspector-popover {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 75vh !important;
+    max-height: 75dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.75) !important;
+    padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    transform: none !important;
+    z-index: 1050 !important;
+  }
 }
 @keyframes shakeHighlight {
   0% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(0, 201, 219, 0); }
@@ -2565,8 +2637,10 @@ button.legal-nav-link {
   position: fixed;
   top: 0;
   left: 0;
-  width: 350px;
+  width: min(340px, 85vw);
   height: 100vh;
+  height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 1000;
   background: rgba(14, 16, 26, 0.94);
   backdrop-filter: blur(28px);
@@ -4286,25 +4360,77 @@ button.legal-nav-link {
   .workspace-viewport.workflow-active {
     flex-direction: column;
     height: calc(100vh - 110px);
+    height: calc(100dvh - 110px);
   }
   .mobile-tab-switcher {
     display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(14, 16, 26, 0.96);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .workspace-viewport.workflow-active .workbench-canvas-pane {
-    width: 100% !important;
-    height: 100% !important;
-    display: none;
+  .mobile-back-to-home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
   }
+  .mobile-back-to-home-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+  }
+  [data-theme='light'] .mobile-back-to-home-btn {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #1e293b;
+  }
+
+  /* When Canvas Tab is Active: Show DAG Canvas + Keep Resident Input at Bottom */
   .workspace-viewport.workflow-active .workbench-canvas-pane.tab-active {
     display: flex !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
-  .workspace-viewport.workflow-active .stream-terminal-pane {
+  .workspace-viewport.workflow-active .workbench-canvas-pane.tab-active ~ .stream-terminal-pane {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .workspace-viewport.workflow-active .workbench-canvas-pane.tab-active ~ .stream-terminal-pane .arbitration-header-bar,
+  .workspace-viewport.workflow-active .workbench-canvas-pane.tab-active ~ .stream-terminal-pane .chat-area {
+    display: none !important;
+  }
+
+  /* When Stream Tab is Active: Hide Canvas, Show Full Stream + Resident Input */
+  .workspace-viewport.workflow-active .workbench-canvas-pane:not(.tab-active) {
+    display: none !important;
+  }
+  .workspace-viewport.workflow-active .stream-terminal-pane.tab-active {
+    display: flex !important;
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
-    display: none;
+    flex: 1 1 auto !important;
   }
-  .workspace-viewport.workflow-active .stream-terminal-pane.tab-active {
+  .workspace-viewport.workflow-active .stream-terminal-pane.tab-active .chat-area {
     display: flex !important;
   }
 }

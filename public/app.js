@@ -1606,13 +1606,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function initConsoleBackButton() {
-    const backBtn = document.getElementById('console-back-btn');
-    if (!backBtn) return;
-    backBtn.addEventListener('click', (e) => {
+    const handleBack = (e) => {
       e.stopPropagation();
       resetToRootInterface();
       triggerInputAttentionGlow();
-    });
+    };
+    const backBtn = document.getElementById('console-back-btn');
+    if (backBtn) backBtn.addEventListener('click', handleBack);
+    const mobileBackBtn = document.getElementById('mobile-back-to-home-btn');
+    if (mobileBackBtn) mobileBackBtn.addEventListener('click', handleBack);
   }
 
   // Fixed Portal Popover Menu for History Drawer (Expands to the right)
@@ -3197,8 +3199,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     topPos = Math.max(16, Math.min(parentRect.height - popoverHeight - 16, topPos));
 
-    popover.style.left = `${Math.round(leftPos)}px`;
-    popover.style.top = `${Math.round(topPos)}px`;
+    if (window.innerWidth <= 768) {
+      popover.style.left = '';
+      popover.style.top = '';
+    } else {
+      popover.style.left = `${Math.round(leftPos)}px`;
+      popover.style.top = `${Math.round(topPos)}px`;
+    }
     popover.style.display = 'flex';
 
     if (closeBtn) {
@@ -4767,6 +4774,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       tabBtnCanvas.classList.add('active');
       tabBtnStream.classList.remove('active');
       canvasPane?.classList.add('tab-active');
+      streamPane?.classList.remove('tab-active');
       requestAnimationFrame(() => renderDagSvgConnectors());
       setTimeout(() => renderDagSvgConnectors(), 50);
       setTimeout(() => renderDagSvgConnectors(), 200);
@@ -6195,6 +6203,7 @@ let notifState = {
 };
 
 window.fetchNotifications = async function() {
+  if (!user) return;
   try {
     const res = await fetch('/api/notifications?limit=15');
     if (!res.ok) return;
@@ -6402,6 +6411,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (notifBtn && notifPopover) {
     notifBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!user) {
+        if (notifPopover) notifPopover.style.display = 'none';
+        notifState.isOpen = false;
+        window.showModal(
+          t('chat.loginRequired'),
+          `<p style="color:var(--text-secondary); line-height:1.6;">${t('chat.loginToUse')}</p>`,
+          t('auth.goToLogin'),
+          () => { window.location.href = '/login.html'; }
+        );
+        return;
+      }
       notifState.isOpen = !notifState.isOpen;
       notifPopover.style.display = notifState.isOpen ? 'flex' : 'none';
       if (notifState.isOpen) {
