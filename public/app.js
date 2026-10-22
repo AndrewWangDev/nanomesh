@@ -1491,9 +1491,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function setWorkflowActive(active) {
     const viewport = document.getElementById('workspace-viewport');
+    const mobileSwitcher = document.getElementById('mobile-tab-switcher');
     if (viewport) {
       if (active) {
         viewport.classList.add('workflow-active');
+        if (mobileSwitcher) {
+          mobileSwitcher.classList.add('active');
+          mobileSwitcher.style.display = '';
+        }
         // Multi-frame measurement passes during and after workbench 500ms CSS split transition
         requestAnimationFrame(() => renderDagSvgConnectors());
         setTimeout(() => renderDagSvgConnectors(), 100);
@@ -1501,6 +1506,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => renderDagSvgConnectors(), 520);
       } else {
         viewport.classList.remove('workflow-active');
+        if (mobileSwitcher) {
+          mobileSwitcher.classList.remove('active');
+          mobileSwitcher.style.display = 'none';
+        }
       }
     }
   }
@@ -1585,6 +1594,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.originalNodeConfigs = {};
 
     // 11. Reset mobile tabs to default if switched
+    const mobileSwitcher = document.getElementById('mobile-tab-switcher');
+    if (mobileSwitcher) {
+      mobileSwitcher.classList.remove('active');
+      mobileSwitcher.style.display = 'none';
+    }
     const tabBtnCanvas = document.getElementById('tab-btn-canvas');
     const tabBtnStream = document.getElementById('tab-btn-stream');
     const canvasPane = document.getElementById('workbench-canvas-pane');

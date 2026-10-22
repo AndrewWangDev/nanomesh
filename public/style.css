@@ -4363,6 +4363,11 @@ button.legal-nav-link {
     height: calc(100dvh - 110px);
   }
   .mobile-tab-switcher {
+    display: none;
+  }
+  body:has(.workspace-viewport.workflow-active) .mobile-tab-switcher,
+  .workspace-viewport.workflow-active ~ .mobile-tab-switcher,
+  .mobile-tab-switcher.active {
     display: flex !important;
     align-items: center;
     gap: 8px;

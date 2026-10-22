@@ -2312,11 +2312,11 @@
   }
 
   .settings-close-btn {
-    top: 0.65rem;
-    right: 0.75rem;
-    position: absolute;
-    z-index: 100;
-    background: rgba(255, 255, 255, 0.1);
+    position: fixed;
+    top: calc(0.65rem + env(safe-area-inset-top, 0px));
+    right: calc(0.75rem + env(safe-area-inset-right, 0px));
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 50%;
     width: 32px;
     height: 32px;
@@ -2328,7 +2328,7 @@
   }
 
   [data-theme="light"] .settings-close-btn {
-    background: rgba(0, 0, 0, 0.07);
+    background: rgba(0, 0, 0, 0.08);
     color: #1e293b;
   }
 
