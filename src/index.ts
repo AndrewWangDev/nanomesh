@@ -247,6 +247,9 @@ export default {
       }
       const secureAssetRes = new Response(assetResponse.body, assetResponse);
       secureAssetRes.headers.set("X-Content-Type-Options", "nosniff");
+      if (url.pathname.match(/^\/(favicon|apple-touch-icon|android-chrome)/)) {
+        secureAssetRes.headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+      }
       return secureAssetRes;
       
     } catch (err: any) {
