@@ -399,9 +399,10 @@ export async function handlePasskeyLoginVerify(request: Request, env: Env): Prom
   );
   const newCounter = view.getUint32(33);
 
-  // If counter is enabled and decreases/repeats (unless 0), warn/handle
+  // If counter is enabled and decreases/repeats (unless 0), reject authentication per W3C WebAuthn spec Section 7.2
   if (newCounter > 0 && passkey.counter > 0 && newCounter <= passkey.counter) {
-    console.warn(`[Passkey] Potential cloned authenticator detected: newCounter=${newCounter}, storedCounter=${passkey.counter}`);
+    console.error(`[Passkey Security Violation] Cloned authenticator or replay detected: newCounter=${newCounter}, storedCounter=${passkey.counter}`);
+    return Response.json({ error: "error.clonedAuthenticatorDetected" }, { status: 403 });
   }
 
   await env.DB.prepare(`

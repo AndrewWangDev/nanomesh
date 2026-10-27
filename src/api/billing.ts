@@ -85,7 +85,7 @@ export async function handleRedeem(req: Request, env: Env): Promise<Response> {
 
   const normalized = normalizeGiftCode(rawCode);
   // Valid Crockford Base32 (32 chars: 0-9, A-Z excluding I, L, O, U)
-  const codeRegex = /^[0-9A-TV-Z]{16}$/;
+  const codeRegex = /^[0-9A-HJKMNP-TV-Z]{16}$/;
   if (!codeRegex.test(normalized)) {
     await env.DB.prepare("INSERT INTO redeem_attempts (user_id) VALUES (?)").bind(session.userId).run();
     return Response.json({ error: "error.redeem.invalid" }, { status: 400 });

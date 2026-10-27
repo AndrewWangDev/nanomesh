@@ -54,7 +54,9 @@ function safeRenderMarkdown(rawText) {
     });
   }
 
-  return html;
+  // Fail-Closed: Never output unverified marked HTML if DOMPurify is unavailable
+  console.warn('[Security] DOMPurify unavailable. Failing closed to escaped plain text.');
+  return `<pre style="white-space: pre-wrap; font-family: inherit;">${escapeHtml(rawText)}</pre>`;
 }
 window.safeRenderMarkdown = safeRenderMarkdown;
 window.renderMarkdownToHtml = safeRenderMarkdown;

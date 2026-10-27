@@ -82,7 +82,7 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
     });
   }
 
-  // 2. Quota Check
+  // 2. Quota Check & Atomic Reservation: Prevent concurrent TOCTOU overdraft
   const userRow = await env.DB.prepare(
     "SELECT credits FROM users WHERE user_id = ?"
   ).bind(session.userId).first<{ credits: number }>();
@@ -92,6 +92,21 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
     return new Response(JSON.stringify({ 
       error: "insufficient_quota", 
       message: "当前可用积分余额为 0 ⚡，无法提交任务，请先充值额度。" 
+    }), { 
+      status: 403, 
+      headers: { "Content-Type": "application/json" } 
+    });
+  }
+
+  // Atomically reserve 1 base credit to prevent race conditions across parallel requests
+  const reserveResult = await env.DB.prepare(
+    "UPDATE users SET credits = credits - 1 WHERE user_id = ? AND credits >= 1"
+  ).bind(session.userId).run();
+
+  if (!reserveResult.meta.changes || reserveResult.meta.changes === 0) {
+    return new Response(JSON.stringify({ 
+      error: "insufficient_quota", 
+      message: "可用积分不足或并发请求额度受限，请稍后重试。" 
     }), { 
       status: 403, 
       headers: { "Content-Type": "application/json" } 
@@ -172,8 +187,11 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
     // 3. Run Gateway 3-Step Arbitration & Instantiate DAG
     const dag = await runOrchestrationPipeline(env, envelope, orchestrationOptions);
 
-    // 4. Return SSE Stream
-    const stream = await executeDAGStream(env, dag, envelope, { userId: session.userId });
+    // 4. Return SSE Stream (with pre-deduction tracking for atomic billing)
+    const stream = await executeDAGStream(env, dag, envelope, { 
+      userId: session.userId, 
+      hasPreDeducted: true 
+    });
 
     return new Response(stream, {
       headers: {

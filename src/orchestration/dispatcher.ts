@@ -10,6 +10,7 @@ import { InstantiatedDAG, UnifiedProtocolEnvelope } from "./types";
 
 export interface ExecutionOptions {
   userId: string;
+  hasPreDeducted?: boolean;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -527,6 +528,12 @@ export async function executeDAGStream(
 
             if (imageAsset) {
               if (imageAsset.r2_key && env.R2) {
+                // Security check (IDOR/BOLA prevention): Only allow access to current session's assets
+                const userSafePrefix = `tmp/${options.userId}/`;
+                if (!imageAsset.r2_key.startsWith(userSafePrefix)) {
+                  console.error(`[Security IDOR] User ${options.userId} attempted to access unauthorized R2 key: ${imageAsset.r2_key}`);
+                  throw new Error(`安全违规：拒绝访问未经授权的资产对象`);
+                }
                 try {
                   const r2Obj = await env.R2.get(imageAsset.r2_key);
                   if (r2Obj) {
@@ -739,27 +746,69 @@ export async function executeDAGStream(
           upstreamOutput = nodeOutput;
         }
 
-        // 3. Deduct points if cost > 0
-        if (totalCost > 0) {
+        // 3. Settle billing atomically (preventing transaction tearing & race conditions)
+        if (options.hasPreDeducted) {
+          if (totalCost === 0) {
+            // Full cache hit: refund the 1 reserved base credit
+            try {
+              await env.DB.prepare(
+                "UPDATE users SET credits = credits + 1 WHERE user_id = ?"
+              ).bind(options.userId).run();
+            } catch (refundErr) {
+              console.error("[Dispatcher] Failed to refund reserved credit:", refundErr);
+            }
+          } else {
+            // totalCost >= 1: 1 credit was already pre-deducted at entry. Settle remaining delta and ledger in batch.
+            const remainingCost = totalCost - 1;
+            try {
+              const ledgerId = crypto.randomUUID();
+              const statements = [];
+              if (remainingCost > 0) {
+                statements.push(
+                  env.DB.prepare(
+                    "UPDATE users SET credits = MAX(0, credits - ?) WHERE user_id = ?"
+                  ).bind(remainingCost, options.userId)
+                );
+              }
+              statements.push(
+                env.DB.prepare(
+                  `INSERT INTO credit_ledger 
+                   (ledger_id, user_id, category, amount, balance, title, detail, created_at)
+                   VALUES (?, ?, 'compute_cost', ?, (SELECT credits FROM users WHERE user_id = ?), 'DAG智能编排调用', ?, datetime('now'))`
+                ).bind(
+                  ledgerId,
+                  options.userId,
+                  -totalCost,
+                  options.userId,
+                  `执行模板: ${dag.template.name_zh}`
+                )
+              );
+              await env.DB.batch(statements);
+            } catch (billingErr) {
+              console.error("[Dispatcher] Failed to settle credits atomically:", billingErr);
+            }
+          }
+        } else if (totalCost > 0) {
           try {
-            await env.DB.prepare(
-              "UPDATE users SET credits = MAX(0, credits - ?) WHERE user_id = ?"
-            ).bind(totalCost, options.userId).run();
-
-            // Record transaction ledger
-            await env.DB.prepare(
-              `INSERT INTO credit_ledger 
-               (ledger_id, user_id, category, amount, balance, title, detail, created_at)
-               VALUES (?, ?, 'compute_cost', ?, (SELECT credits FROM users WHERE user_id = ?), 'DAG智能编排调用', ?, datetime('now'))`
-            ).bind(
-              crypto.randomUUID(),
-              options.userId,
-              -totalCost,
-              options.userId,
-              `执行模板: ${dag.template.name_zh}`
-            ).run();
+            const ledgerId = crypto.randomUUID();
+            await env.DB.batch([
+              env.DB.prepare(
+                "UPDATE users SET credits = MAX(0, credits - ?) WHERE user_id = ?"
+              ).bind(totalCost, options.userId),
+              env.DB.prepare(
+                `INSERT INTO credit_ledger 
+                 (ledger_id, user_id, category, amount, balance, title, detail, created_at)
+                 VALUES (?, ?, 'compute_cost', ?, (SELECT credits FROM users WHERE user_id = ?), 'DAG智能编排调用', ?, datetime('now'))`
+              ).bind(
+                ledgerId,
+                options.userId,
+                -totalCost,
+                options.userId,
+                `执行模板: ${dag.template.name_zh}`
+              )
+            ]);
           } catch (billingErr) {
-            console.error("Failed to deduct credits:", billingErr);
+            console.error("[Dispatcher] Failed to deduct credits atomically:", billingErr);
           }
         }
 
@@ -772,6 +821,16 @@ export async function executeDAGStream(
         });
 
       } catch (err: any) {
+        // If task failed before generating outputs and credit was pre-deducted, refund it to prevent unfair loss
+        if (options.hasPreDeducted && totalCost === 0) {
+          try {
+            await env.DB.prepare(
+              "UPDATE users SET credits = credits + 1 WHERE user_id = ?"
+            ).bind(options.userId).run();
+          } catch (refundErr) {
+            console.error("[Dispatcher] Failed to refund on error:", refundErr);
+          }
+        }
         sendEvent('dag_error', {
           error: err.message || 'Execution error'
         });

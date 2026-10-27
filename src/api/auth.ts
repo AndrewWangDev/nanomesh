@@ -175,7 +175,12 @@ export async function handleSendCode(req: Request, env: Env) {
     return Response.json({ error: "error.unsupportedEmailDomain" }, { status: 400 });
   }
 
-  const counter = await env.DB.prepare("SELECT value FROM system_counters WHERE key = 'emails_sent'").first<{value: number}>();
+  const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const dailyKey = `emails_sent_${todayStr}`;
+
+  const counter = await env.DB.prepare(
+    "SELECT value FROM system_counters WHERE key = ?"
+  ).bind(dailyKey).first<{value: number}>();
   if (counter && counter.value >= 500) {
     return Response.json({ error: "error.dailyEmailLimit" }, { status: 429 });
   }
@@ -230,7 +235,9 @@ export async function handleSendCode(req: Request, env: Env) {
     return Response.json({ error: "error.emailSendFailed" }, { status: 500 });
   }
 
-  await env.DB.prepare("UPDATE system_counters SET value = value + 1 WHERE key = 'emails_sent'").run();
+  await env.DB.prepare(
+    "INSERT INTO system_counters (key, value) VALUES (?, 1) ON CONFLICT(key) DO UPDATE SET value = value + 1"
+  ).bind(dailyKey).run();
 
   return Response.json({ success: true });
 }
