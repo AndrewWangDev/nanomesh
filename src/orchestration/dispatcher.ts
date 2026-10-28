@@ -241,6 +241,18 @@ export async function executeDAGStream(
         controller.enqueue(encoder.encode(payload));
       }
 
+      async function refundReservedCredit() {
+        if (options.hasPreDeducted) {
+          try {
+            await env.DB.prepare(
+              "UPDATE users SET credits = credits + 1 WHERE user_id = ?"
+            ).bind(options.userId).run();
+          } catch (refundErr) {
+            console.error("[Dispatcher] Failed to refund reserved credit:", refundErr);
+          }
+        }
+      }
+
       // SSE Keep-Alive Heartbeat to prevent edge gateway timeouts
       const heartbeatTimer = setInterval(() => {
         try {
@@ -301,6 +313,7 @@ export async function executeDAGStream(
 
         // Fast-Failed Gateways (Security Violation or Capability Out-of-Bounds)
         if (dag.is_security_violation) {
+          await refundReservedCredit();
           sendEvent('security_blocked', {
             is_blocked: true,
             duration_ms: Date.now() - startTime,
@@ -318,6 +331,7 @@ export async function executeDAGStream(
         }
 
         if (dag.is_unreachable) {
+          await refundReservedCredit();
           sendEvent('capability_unreachable', {
             is_unreachable: true,
             duration_ms: Date.now() - startTime,
@@ -750,13 +764,7 @@ export async function executeDAGStream(
         if (options.hasPreDeducted) {
           if (totalCost === 0) {
             // Full cache hit: refund the 1 reserved base credit
-            try {
-              await env.DB.prepare(
-                "UPDATE users SET credits = credits + 1 WHERE user_id = ?"
-              ).bind(options.userId).run();
-            } catch (refundErr) {
-              console.error("[Dispatcher] Failed to refund reserved credit:", refundErr);
-            }
+            await refundReservedCredit();
           } else {
             // totalCost >= 1: 1 credit was already pre-deducted at entry. Settle remaining delta and ledger in batch.
             const remainingCost = totalCost - 1;
@@ -822,14 +830,8 @@ export async function executeDAGStream(
 
       } catch (err: any) {
         // If task failed before generating outputs and credit was pre-deducted, refund it to prevent unfair loss
-        if (options.hasPreDeducted && totalCost === 0) {
-          try {
-            await env.DB.prepare(
-              "UPDATE users SET credits = credits + 1 WHERE user_id = ?"
-            ).bind(options.userId).run();
-          } catch (refundErr) {
-            console.error("[Dispatcher] Failed to refund on error:", refundErr);
-          }
+        if (totalCost === 0) {
+          await refundReservedCredit();
         }
         sendEvent('dag_error', {
           error: err.message || 'Execution error'
